@@ -1,0 +1,17 @@
+Build.PL
+Changes
+lib/Uc/Twitter/Schema.pm
+lib/Uc/Twitter/Schema/Result/ProfileImage.pm
+lib/Uc/Twitter/Schema/Result/Remark.pm
+lib/Uc/Twitter/Schema/Result/Status.pm
+lib/Uc/Twitter/Schema/Result/User.pm
+lib/Uc/Twitter/Schema/ResultSet/Status.pm
+lib/Uc/Twitter/Schema/ResultSet/User.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+README.pod
+t/00.load.t
+t/perlcritic.t
+t/pod-coverage.t
+t/pod.t
