@@ -17,6 +17,7 @@ use Encode qw(find_encoding);
 use AnyEvent::Twitter::Stream;
 use Config::Pit;
 use Getopt::Long;
+use IO::File;
 
 require "twitter_agent.pl";
 require "profile_id.pl";
@@ -55,6 +56,7 @@ my $schema = Uc::Twitter::Schema->connect('dbi:mysql:twitter', $mysql->{user}, $
     on_connect_do     => ['set names utf8', 'set character set utf8'],
 });
 $schema->storage->debug($debug);
+$schema->storage->debugfh(IO::File->new('./twitter_userstream.out', 'w'));
 
 my $cv = AE::cv;
 
