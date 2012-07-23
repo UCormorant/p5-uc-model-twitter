@@ -60,6 +60,8 @@ $schema->storage->debugfh(IO::File->new('./twitter_userstream.out', 'w'));
 
 my $cv = AE::cv;
 
+my @tweet;
+my $interval;
 my $streamer = AnyEvent::Twitter::Stream->new(
     consumer_key    => $utig->{consumer_key},
     consumer_secret => $utig->{consumer_secret},
@@ -69,6 +71,7 @@ my $streamer = AnyEvent::Twitter::Stream->new(
 
     on_connect => sub {
         say "connect.";
+        $interval = AE::timer 0, 10, sub { save_tweet() };
     },
     on_friends => sub {
         say Dumper(shift);
@@ -76,14 +79,34 @@ my $streamer = AnyEvent::Twitter::Stream->new(
     on_tweet => sub {
         my $t = shift;
         if (!$t->{user} or !$t->{text}) { warn Dumper($t); return; }
-        $schema->resultset('Status')->find_or_create_from_tweet($t, { user_id => $config->{user_id}, ignore_remark_disabling => 1 });
         say "$t->{user}{screen_name}: $t->{text}";
+
+        push @tweet, $t;
+        save_tweet() if scalar @tweet >= 10;
     },
     on_error => sub {
         warn "error: $_[0]";
+        undef $interval;
         $cv->send;
     },
     on_eof => $cv,
 );
+
+sub save_tweet {
+    if (scalar @tweet) {
+        $schema->txn_do(sub {
+            while (@tweet) {
+                $schema->resultset('Status')->find_or_create_from_tweet(
+                    shift @tweet,
+                    { user_id => $config->{user_id}, ignore_remark_disabling => 1 }
+                );
+            }
+        });
+    }
+}
+
+$SIG{INT} = $SIG{TERM} = $SIG{BREAK} = sub { exit; };
+$SIG{DIE} = sub { save_tweet(); };
+END { save_tweet(); }
 
 $cv->recv;
