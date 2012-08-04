@@ -2,7 +2,7 @@ package Uc::Twitter::Schema::Result::Status;
 
 use common::sense;
 use warnings qw(utf8);
-use base 'DBIx::Class::Core';
+use parent 'DBIx::Class::Core';
 
 use DateTime;
 use DateTime::Format::HTTP;

@@ -2,7 +2,7 @@ package Uc::Twitter::Schema::ResultSet::Status;
 
 use common::sense;
 use warnings qw(utf8);
-use base 'DBIx::Class::ResultSet';
+use parent 'DBIx::Class::ResultSet';
 
 use Carp qw(croak);
 use Encode qw(encode_utf8);

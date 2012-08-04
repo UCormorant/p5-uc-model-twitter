@@ -2,7 +2,7 @@ package Uc::Twitter::Schema::Result::User;
 
 use common::sense;
 use warnings qw(utf8);
-use base 'DBIx::Class::Core';
+use parent 'DBIx::Class::Core';
 
 __PACKAGE__->table("user");
 __PACKAGE__->resultset_class('Uc::Twitter::Schema::ResultSet::User');

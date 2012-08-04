@@ -2,7 +2,7 @@ package Uc::Twitter::Schema::ResultSet::User;
 
 use common::sense;
 use warnings qw(utf8);
-use base 'DBIx::Class::ResultSet';
+use parent 'DBIx::Class::ResultSet';
 
 use Encode qw(encode_utf8);
 use Digest::MD5 qw(md5_hex);

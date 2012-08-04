@@ -2,8 +2,8 @@ package Uc::Twitter::Schema;
 
 use common::sense;
 use warnings qw(utf8);
-use version; our $VERSION = qv('1.0.1');
-use base 'DBIx::Class::Schema';
+use version; our $VERSION = qv('1.0.2');
+use parent 'DBIx::Class::Schema';
 
 __PACKAGE__->load_namespaces;
 1; # Magic true value required at end of module

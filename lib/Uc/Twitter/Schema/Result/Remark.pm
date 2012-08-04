@@ -2,7 +2,7 @@ package Uc::Twitter::Schema::Result::Remark;
 
 use common::sense;
 use warnings qw(utf8);
-use base 'DBIx::Class::Core';
+use parent 'DBIx::Class::Core';
 
 __PACKAGE__->table("remark");
 __PACKAGE__->add_columns(
