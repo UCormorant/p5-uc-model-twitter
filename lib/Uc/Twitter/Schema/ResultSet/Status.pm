@@ -37,6 +37,12 @@ sub find_or_create_from_tweet {
         }
     }
 
+    if (ref $tweet->{retweeted_status}) {
+        $columns{retweeted_status_id} = $tweet->{retweeted_status}{id};
+
+        $self->find_or_create_from_tweet($tweet->{retweeted_status}, $attr) if ref $tweet->{retweeted_status}{user};
+    }
+
     if ($attr->{user_id} ne '') {
         my $update = {
             id => $tweet->{id},
@@ -53,7 +59,7 @@ sub find_or_create_from_tweet {
             delete $update->{$col} if $attr->{ignore_remark_disabling} && !$update->{$col};
         }
         if (exists $update->{favorited} or exists $update->{retweeted}) {
-            $schema->resultset('Remark')->update_or_create($update);
+            $schema->resultset('Remark')->update_or_create_with_retweet($update);
         }
     }
 
