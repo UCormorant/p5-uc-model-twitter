@@ -44,6 +44,8 @@ __PACKAGE__->add_columns(
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
   "in_reply_to_screen_name",
   { data_type => "tinytext", is_nullable => 1 },
+  "retweeted_status_id",
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
   "protected",
   { data_type => "tinyint", is_nullable => 1 },
   "truncated",
