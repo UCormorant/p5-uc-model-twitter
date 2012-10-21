@@ -1,4 +1,4 @@
-#!perl
+#!/usr/local/bin/perl
 
 use lib qw(lib ../lib);
 use DBICx::Deploy;

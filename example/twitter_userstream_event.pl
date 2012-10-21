@@ -1,14 +1,13 @@
-#!perl
+#!/usr/local/bin/perl
 
 use 5.010;
 use common::sense;
 use warnings qw(utf8);
 
 use Readonly;
-Readonly my $CHARSET => 'cp932';
+Readonly my $CHARSET => ($^O eq 'MSWin32' ? 'cp932' : 'utf8');
 binmode STDIN  => ":encoding($CHARSET)";
 binmode STDOUT => ":encoding($CHARSET)";
-binmode STDERR => ":encoding($CHARSET)";
 
 use lib qw(lib ../lib);
 use Uc::Twitter::Schema;
@@ -52,11 +51,12 @@ pit_set("utig.pl.$prof", data => $config) if $nt->{config_updated};
 my $encode = find_encoding($CHARSET);
 my $schema = Uc::Twitter::Schema->connect('dbi:mysql:twitter', $mysql->{user}, $mysql->{pass}, {
 #    RaiseError        => 1,
+    PrintError        => $debug,
     mysql_enable_utf8 => 1,
-    on_connect_do     => ['set names utf8', 'set character set utf8'],
+    on_connect_do     => ['set names utf8'],
 });
 $schema->storage->debug($debug);
-$schema->storage->debugfh(IO::File->new('./twitter_userstream.out', 'w'));
+$schema->storage->debugfh(IO::File->new('./twitter_userstream_event.out', 'w'));
 
 my $cv = AE::cv;
 
@@ -66,7 +66,6 @@ my $streamer = AnyEvent::Twitter::Stream->new(
     token           => $config->{token},
     token_secret    => $config->{token_secret},
     method          => 'userstream',
-
 
     on_connect => sub {
         say "connect.";
@@ -89,3 +88,5 @@ my $streamer = AnyEvent::Twitter::Stream->new(
 );
 
 $cv->recv;
+
+1;

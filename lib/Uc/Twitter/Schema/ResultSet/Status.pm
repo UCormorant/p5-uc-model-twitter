@@ -2,11 +2,10 @@ package Uc::Twitter::Schema::ResultSet::Status;
 
 use common::sense;
 use warnings qw(utf8);
-use parent 'DBIx::Class::ResultSet';
+use parent qw(DBIx::Class::ResultSet);
+use Uc::Twitter::Schema::ResultSetBaseModule;
 
 use Carp qw(croak);
-use Encode qw(encode_utf8);
-use DateTime::Format::HTTP;
 
 our @BOOLEAN_VALUE = qw(
     protected
@@ -23,18 +22,22 @@ sub find_or_create_from_tweet {
 
     my %columns;
     for my $col ($result_source->columns) {
+        my $col_info = $result_source->column_info($col);
         $columns{$col} = $tweet->{$col} if     exists $tweet->{$col};
         $columns{$col} = $user->{$col}  if not exists $tweet->{$col} and exists $user->{$col};
-        if (exists $columns{$col} && $col ~~ \@BOOLEAN_VALUE) {
-            $columns{$col} = 1 if $columns{$col} =~ /^true$/i;
-            $columns{$col} = 0 if $columns{$col} =~ /^false$/i;
+        if (exists $columns{$col}) {
+            if ($col ~~ \@BOOLEAN_VALUE) {
+                $columns{$col} = 1 if $columns{$col} =~ /^true$/i;
+                $columns{$col} = 0 if $columns{$col} =~ /^false$/i;
+            }
         }
         elsif (not defined $columns{$col}) {
-            my $col_info = $result_source->column_info($col);
             if (!$col_info->{is_nullable}) {
                 $columns{$col} = exists $col_info->{default_value} ? $col_info->{default_value} : '';
             }
         }
+
+        $columns{$col} = inflate_datetime($columns{$col}, $col_info);
     }
 
     if (ref $tweet->{retweeted_status}) {
@@ -70,14 +73,7 @@ sub find_or_create_from_tweet {
         $columns{protected}  = $profile->protected;
     }
 
-    for my $col ($result_source->columns) {
-        $columns{$col} = encode_utf8($columns{$col}) if exists $columns{$col} && utf8::is_utf8($columns{$col});
-    }
-
-    if (ref $columns{created_at} ne 'DateTime') {
-        $columns{created_at} =~ s/\+0000/GMT/;
-        $columns{created_at} = DateTime::Format::HTTP->parse_datetime($columns{created_at});
-    }
+    $columns{$_} = deflate_utf8($columns{$_}) for $result_source->columns;
 
     $self->find_or_create(\%columns);
 }

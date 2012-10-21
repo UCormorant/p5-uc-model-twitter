@@ -4,12 +4,9 @@ use common::sense;
 use warnings qw(utf8);
 use parent 'DBIx::Class::Core';
 
-use DateTime;
-use DateTime::Format::HTTP;
-use DateTime::Format::MySQL;
-
 __PACKAGE__->table("status");
 __PACKAGE__->resultset_class('Uc::Twitter::Schema::ResultSet::Status');
+__PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->add_columns(
   "id",
   {
@@ -71,17 +68,5 @@ __PACKAGE__->belongs_to( user => 'Uc::Twitter::Schema::Result::User', {
 __PACKAGE__->has_many( remark => 'Uc::Twitter::Schema::Result::Remark', {
     'foreign.id' => 'self.id',
 }, { cascade_delete => 0 } );
-
-__PACKAGE__->inflate_column( created_at => {
-    inflate => sub { DateTime::Format::MySQL->parse_datetime(shift); },
-    deflate => sub {
-        my $date = shift;
-        if (ref $date ne 'DateTime') {
-            $date =~ s/\+0000/GMT/;
-            $date = DateTime::Format::HTTP->parse_datetime($date);
-        }
-        DateTime::Format::MySQL->format_datetime($date);
-    },
-});
 
 1;

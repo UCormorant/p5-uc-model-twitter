@@ -2,7 +2,8 @@ package Uc::Twitter::Schema::ResultSet::Remark;
 
 use common::sense;
 use warnings qw(utf8);
-use parent 'DBIx::Class::ResultSet';
+use parent qw(DBIx::Class::ResultSet);
+use Uc::Twitter::Schema::ResultSetBaseModule;
 
 use Carp qw(croak);
 
@@ -18,13 +19,13 @@ sub update_or_create_with_retweet {
 
     my %columns;
     for my $col ($result_source->columns) {
+        my $col_info = $result_source->column_info($col);
         $columns{$col} = $update->{$col} if exists $update->{$col};
         if (exists $columns{$col} && $col ~~ \@BOOLEAN_VALUE) {
             $columns{$col} = 1 if $columns{$col} =~ /^true$/i;
             $columns{$col} = 0 if $columns{$col} =~ /^false$/i;
         }
         elsif (not defined $columns{$col}) {
-            my $col_info = $result_source->column_info($col);
             if (!$col_info->{is_nullable}) {
                 if (exists $col_info->{default_value}) {
                     $columns{$col} = $col_info->{default_value};
@@ -35,6 +36,8 @@ sub update_or_create_with_retweet {
                 }
             }
         }
+
+        $columns{$col} = inflate_datetime($columns{$col}, $col_info);
     }
 
     my $retweeted_status_id = undef;
@@ -47,11 +50,13 @@ sub update_or_create_with_retweet {
             $retweeted_status_id = $tweet->retweeted_status_id;
         }
     }
-    if ($retweeted_status_id) {
+    if (defined $retweeted_status_id) {
         my %retweet_update = %$update;
         $retweet_update{id} = $retweeted_status_id;
         $self->update_or_create(\%retweet_update);
     }
+
+    $columns{$_} = deflate_utf8($columns{$_}) for $result_source->columns;
 
     $self->update_or_create($update);
 }
