@@ -40,6 +40,8 @@ sub update_or_create_with_retweet {
         $columns{$col} = inflate_datetime($columns{$col}, $col_info);
     }
 
+    $columns{$_} = deflate_utf8($columns{$_}) for $result_source->columns;
+
     my $retweeted_status_id = undef;
     if (ref $attr->{retweeted_status}) {
         $retweeted_status_id = $attr->{retweeted_status}{id};
@@ -51,14 +53,12 @@ sub update_or_create_with_retweet {
         }
     }
     if (defined $retweeted_status_id) {
-        my %retweet_update = %$update;
+        my %retweet_update = %$columns;
         $retweet_update{id} = $retweeted_status_id;
         $self->update_or_create(\%retweet_update);
     }
 
-    $columns{$_} = deflate_utf8($columns{$_}) for $result_source->columns;
-
-    $self->update_or_create($update);
+    $self->update_or_create(\%columns);
 }
 
 1;
