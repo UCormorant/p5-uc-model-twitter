@@ -53,7 +53,7 @@ sub update_or_create_with_retweet {
         }
     }
     if (defined $retweeted_status_id) {
-        my %retweet_update = %$columns;
+        my %retweet_update = %columns;
         $retweet_update{id} = $retweeted_status_id;
         $self->update_or_create(\%retweet_update);
     }
