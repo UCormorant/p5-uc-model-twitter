@@ -10,6 +10,7 @@ lib/Uc/Twitter/Schema/Result/ProfileImage.pm
 lib/Uc/Twitter/Schema/Result/Remark.pm
 lib/Uc/Twitter/Schema/Result/Status.pm
 lib/Uc/Twitter/Schema/Result/User.pm
+lib/Uc/Twitter/Schema/ResultSet/Remark.pm
 lib/Uc/Twitter/Schema/ResultSet/Status.pm
 lib/Uc/Twitter/Schema/ResultSet/User.pm
 lib/Uc/Twitter/Schema/ResultSetBaseModule.pm

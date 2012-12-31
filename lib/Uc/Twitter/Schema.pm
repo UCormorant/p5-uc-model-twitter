@@ -2,7 +2,7 @@ package Uc::Twitter::Schema;
 
 use common::sense;
 use warnings qw(utf8);
-use version; our $VERSION = qv('1.2.2');
+use version; our $VERSION = qv('1.2.3');
 use parent 'DBIx::Class::Schema';
 
 $ENV{DBIC_DT_SEARCH_OK} = 1;
