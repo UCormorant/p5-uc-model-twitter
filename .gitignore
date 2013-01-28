@@ -13,4 +13,4 @@ pm_to_blib*
 .lwpcookies
 cover_db
 pod2htm*.tmp
-Uc-Twitter-Schema-*
+Uc-Model-Twitter-*

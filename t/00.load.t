@@ -1,7 +1,9 @@
-use Test::More tests => 1;
+use Test::More tests => 3;
 
 BEGIN {
-use_ok( 'Uc::Twitter::Schema' );
+use_ok( 'Uc::Model::Twitter' );
+use_ok( 'Uc::Model::Twitter::Schema' );
+use_ok( 'Uc::Model::Twitter::Util' );
 }
 
-diag( "Testing Uc::Twitter::Schema $Uc::Twitter::Schema::VERSION" );
+diag( "Testing Uc::Model::Twitter ".Uc::Model::Twitter->VERSION );

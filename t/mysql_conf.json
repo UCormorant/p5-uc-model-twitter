@@ -1,0 +1,4 @@
+{
+    "user": "root", // MySQL USER
+    "pass": "" // MYSQL USERPASSWORD
+}
