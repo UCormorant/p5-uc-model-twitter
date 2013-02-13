@@ -4,7 +4,7 @@ author:
   - 'U=Cormorant  C<< <u@chimata.org> >>'
 build_requires:
   ExtUtils::MakeMaker: 6.59
-  Test::More: 0.94
+  Test::More: 0.98
 configure_requires:
   ExtUtils::MakeMaker: 6.59
 distribution_type: module
@@ -25,9 +25,9 @@ requires:
   DateTime::Format::HTTP: 0
   DateTime::Format::MySQL: 0
   Teng: 0
-  Uc::Teng::Plugin: 1.000
+  Teng::Plugin::DBIC::ResultSet: 0
   perl: 5.14.0
 resources:
   license: http://dev.perl.org/licenses/
   repository: origin
-version: v1.0.0
+version: v1.0.1

@@ -58,3 +58,5 @@
 #!end included C:\strawberry\perl\lib\ExtUtils\MANIFEST.SKIP
 
 (?:~|\.swp|\.swo|\.bak)$
+\bREADME.mkdn$
+\bUc-Model-Twitter-*

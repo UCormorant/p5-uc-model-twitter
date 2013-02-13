@@ -33,10 +33,10 @@ name 'Uc-Model-Twitter';
 reference_module 'lib/Uc/Model/Twitter.pm';
 auto_set_repository;
 
-test_requires 'Test::More' => '0.94'; # for subtest
+test_requires 'Test::More' => '0.98'; # for subtest
 
 requires 'Teng';
-requires 'Uc::Teng::Plugin' => '1.000';
+requires 'Teng::Plugin::DBIC::ResultSet';
 requires 'DateTime::Format::MySQL';
 requires 'DateTime::Format::HTTP';
 

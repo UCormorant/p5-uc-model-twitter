@@ -1,11 +1,10 @@
-package Uc::Model::Twitter v1.0.0;
+package Uc::Model::Twitter v1.0.1;
 
 use 5.014;
 use warnings;
 use utf8;
 use parent 'Teng';
-__PACKAGE__->load_plugin('+Uc::Teng::Plugin::FindOrCreate');
-__PACKAGE__->load_plugin('+Uc::Teng::Plugin::UpdateOrCreate');
+__PACKAGE__->load_plugin('DBIC::ResultSet');
 
 use Carp qw(croak);
 use DBI qw(:sql_types);

@@ -45,6 +45,7 @@ t/show_status.20.json
 t/show_status.243149503589400576.json
 t/Utils.pm
 xt/boilerplate.t
+xt/perlcritic.t
 xt/pod-coverage.t
 xt/pod.t
 xt/manifest.t
