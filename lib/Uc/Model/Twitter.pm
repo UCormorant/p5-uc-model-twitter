@@ -1,4 +1,4 @@
-package Uc::Model::Twitter v1.0.1;
+package Uc::Model::Twitter v1.0.2;
 
 use 5.014;
 use warnings;
@@ -12,14 +12,14 @@ use Uc::Model::Twitter::Util;
 use autouse 'Uc::Model::Twitter::Util::MySQL'  => qw(create_table_mysql  drop_table_mysql );
 use autouse 'Uc::Model::Twitter::Util::SQLite' => qw(create_table_sqlite drop_table_sqlite);
 
-sub find_or_create_status_from_tweet {
+sub find_or_create_status {
     my ($self, $tweet, $attr) = @_;
     my $table = $self->schema->get_table('status');
     my $user  = $tweet->{user};
 
     $attr = {} unless $attr;
-    $attr->{user_id}                 = '' if not exists $attr->{user_id};
-    $attr->{ignore_remark_disabling} = '' if not exists $attr->{ignore_remark_disabling};
+    $attr->{user_id}          = '' if not exists $attr->{user_id};
+    $attr->{ignore_unmarking} = '' if not exists $attr->{ignore_unmarking};
 
     croak "tweet must include user->{id} and user->{profile_id}" if not defined $user;
 
@@ -33,7 +33,7 @@ sub find_or_create_status_from_tweet {
     if (ref $tweet->{retweeted_status}) {
         $columns{retweeted_status_id} = $tweet->{retweeted_status}{id};
 
-        $self->find_or_create_status_from_tweet($tweet->{retweeted_status}, $attr) if ref $tweet->{retweeted_status}{user};
+        $self->find_or_create_status($tweet->{retweeted_status}, $attr) if ref $tweet->{retweeted_status}{user};
     }
 
     if ($attr->{user_id} ne '') {
@@ -47,16 +47,16 @@ sub find_or_create_status_from_tweet {
             if (exists $tweet->{$col} && $sql_types->{$col} == SQL_BOOLEAN) {
                 push @boolean_cols, $col;
                 $update{$col} = boolify($tweet->{$col});
-                delete $update{$col} if $attr->{ignore_remark_disabling} && !$update{$col};
+                delete $update{$col} if $attr->{ignore_unmarking} && !$update{$col};
             }
         }
         if (scalar grep { exists $update{$_} } @boolean_cols) {
-            $self->update_or_create_remark_with_retweet(\%update);
+            $self->update_or_create_remark(\%update);
         }
     }
 
     {
-        my $profile = $self->find_or_create_profile_from_user($user);
+        my $profile = $self->find_or_create_profile($user);
         $columns{user_id}    = $profile->id;
         $columns{profile_id} = $profile->profile_id;
         $columns{protected}  = $profile->protected;
@@ -71,7 +71,7 @@ sub find_or_create_status_from_tweet {
     $self->find_or_create('status', \%columns);
 }
 
-sub find_or_create_profile_from_user {
+sub find_or_create_profile {
     my ($self, $user, $attr) = @_;
     my $table = $self->schema->get_table('user');
 
@@ -93,7 +93,7 @@ sub find_or_create_profile_from_user {
     $self->find_or_create('user', \%columns);
 }
 
-sub update_or_create_remark_with_retweet {
+sub update_or_create_remark {
     my ($self, $update, $attr) = @_;
     my $table = $self->schema->get_table('remark');
 
@@ -151,150 +151,128 @@ sub drop_table {
 1; # Magic true value required at end of module
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
-Uc::Model::Twitter - [One line description of module's purpose here]
-
-
-=head1 VERSION
-
-This document describes Uc::Model::Twitter version 1.0.0
-
+Uc::Model::Twitter - Teng model class for tweet
 
 =head1 SYNOPSIS
 
     use Uc::Model::Twitter;
 
-=for author to fill in:
-    Brief code example(s) here showing commonest usage(s).
-    This section will be as far as many users bother reading
-    so make it as educational and exeplary as possible.
-  
-  
+    my $umt = Uc::Model::Twitter->new(
+        connect_info => ['dbi:mysql:twitter', 'root', '****', {
+            mysql_enable_utf8 => 1,
+            on_connect_do     => ['set names utf8mb4'],
+    }]);
+
+    # $umt is Teng object. enjoy!
+
 =head1 DESCRIPTION
 
-=for author to fill in:
-    Write a full description of the module and its features here.
-    Use subsections (=head2, =head3) as appropriate.
+Uc::Model::Twitter is the teng model class for Twitter's tweets.
 
+=head1 TABLE
 
-=head1 INTERFACE 
+See L</lib/Uc/Model/Twitter/Schema.pm>.
 
-=for author to fill in:
-    Write a separate section listing the public components of the modules
-    interface. These normally consist of either subroutines that may be
-    exported, or methods that may be called on objects belonging to the
-    classes provided by the module.
+=head1 METHODS
 
+=over 2
 
-=head1 DIAGNOSTICS
+=item C<$tweet_row = $umt-E<gt>find_or_create_status($tweet, [$attr])>
 
-=for author to fill in:
-    List every single error and warning message that the module can
-    generate (even the ones that will "never happen"), with a full
-    explanation of each problem, one or more likely causes, and any
-    suggested remedies.
+Find or create a row into C<status> table.
+Returns the inserted row object.
+
+C<$attr> can include:
 
 =over
 
-=item C<< Error message here, perhaps with %s placeholders >>
+=item * C<user_id>
 
-[Description of error here]
+An numeric id of the user who receive C<$tweet>.
 
-=item C<< Another error message here >>
+=item * C<ignore_unmarking>
 
-[Description of error here]
+If this is given, C<update_or_create_remark> ignores false values when update C<remark> table rows.
 
-[Et cetera, et cetera]
+=item * C<retweeted_status>
+
+If this is given, C<update_or_create_remark> uses C<$attr-E<gt>{retweeted_status}{id}> as retweet status id.
+Or, it will do C<$umt-E<gt>find_or_create_status($tweet-E<gt>{retweeted_status})> and get the status id from returned value.
 
 =back
 
+If C<$tweet> has C<user>, it calls C<find_or_create_profile> too.
+A profile row will be created whenever user profile update will come.
 
-=head1 CONFIGURATION AND ENVIRONMENT
+When a row is inserted and C<$attr-E<gt>{user_id}> is geven,
+you also call C<update_or_create_remark> automatically.
 
-=for author to fill in:
-    A full explanation of any configuration system(s) used by the
-    module, including the names and locations of any configuration
-    files, and the meaning of any environment variables or properties
-    that can be set. These descriptions must also include details of any
-    configuration language used.
-  
-Uc::Model::Twitter requires no configuration files or environment variables.
+=item C<$profile_row = $umt-E<gt>find_or_create_profile($user, [$attr])>
 
+Find or create a row into C<user> table.
+Returns the inserted row object.
+
+Profile rows is just user profile, not user object, so one user has many profile rows.
+
+=item C<$remark_row = $umt-E<gt>update_or_create_remark($remark, [$attr])>
+
+Update or create a row into C<remark> table.
+Returns the updated row object.
+
+You should give this method the hash reference as C<$remark> that include following values.
+
+    id => tweet id,
+    user_id => event user id,
+    favorited => true or false,
+    retweeted => true or false,
+
+=item C<$umt-E<gt>create_table([$attr])>
+
+Initialize database schema.
+!!!If you call this method, all table rows will be deleted!!!
+
+=item C<drop_table>
+
+Drop tables (status, user, remark and profile_images).
+
+=back
 
 =head1 DEPENDENCIES
 
-=for author to fill in:
-    A list of all the other modules that this module relies upon,
-    including any restrictions on versions, and an indication whether
-    the module is part of the standard Perl distribution, part of the
-    module's distribution, or must be installed separately. ]
+=over 2
 
-None.
+=item L<perl> >= 5.14
 
+=item L<Teng>
 
-=head1 INCOMPATIBILITIES
+=item Teng::Plugin::DBIC::ResultSet
 
-=for author to fill in:
-    A list of any modules that this module cannot be used in conjunction
-    with. This may be due to name conflicts in the interface, or
-    competition for system or program resources, or due to internal
-    limitations of Perl (for example, many modules that use source code
-    filters are mutually incompatible).
+L<https://github.com/UCormorant/p5-teng-plugin-dbic-resultset>
 
-None reported.
+=item L<DateTime::Format::HTTP>
 
+=item L<DateTime::Format::MySQL>
+
+=back
 
 =head1 BUGS AND LIMITATIONS
 
-=for author to fill in:
-    A list of known problems with the module, together with some
-    indication Whether they are likely to be fixed in an upcoming
-    release. Also a list of restrictions on the features the module
-    does provide: data types that cannot be handled, performance issues
-    and the circumstances in which they may arise, practical
-    limitations on the size of data sets, special cases that are not
-    (yet) handled, etc.
-
-No bugs have been reported.
-
 Please report any bugs or feature requests to
-C<bug-uc-twetter-schema@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org>.
-
+L<https://github.com/UCormorant/p5-uc-model-twetter/issues>
 
 =head1 AUTHOR
 
-U=Cormorant  C<< <u@chimata.org> >>
+U=Cormorant E<lt>u@chimata.orgE<gt>
 
+=head1 LICENSE
 
-=head1 LICENCE AND COPYRIGHT
+Copyright (C) U=Cormorant.
 
-Copyright (c) 2012, U=Cormorant C<< <u@chimata.org> >>. All rights reserved.
-
-This module is free software; you can redistribute it and/or
+This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
 
-
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
+=cut

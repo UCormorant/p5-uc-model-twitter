@@ -1,5 +1,19 @@
 Revision history for Uc-Model-Twitter
 
+{{$NEXT}}
+
+    - change plugin name
+    - change method names (s/_from_tweet$|_with_retweet$//)
+        - find_or_create_status
+        - find_or_create_profile
+        - update_or_create_remark
+
+    - change args attribute name
+        "ignore_remark_disabling" -> "ignore_unmarking"
+
+    - write POD
+    - minilize
+
 1.0.0  Sun Jul 22 14:03:04 2012
        Initial release.
 
