@@ -237,7 +237,7 @@ Initialize database schema.
 
 C<$option-E<gt>{if_not_exists}> is available.
 
-=item C<$umt->E<gt>drop_table([$table, $table, ...])>
+=item C<$umt-E<gt>drop_table([$table, $table, ...])>
 
 Drop tables (status, user, remark and profile_images).
 
@@ -264,7 +264,7 @@ L<https://github.com/UCormorant/p5-teng-plugin-dbic-resultset>
 =head1 BUGS AND LIMITATIONS
 
 Please report any bugs or feature requests to
-L<https://github.com/UCormorant/p5-uc-model-twetter/issues>
+L<https://github.com/UCormorant/p5-uc-model-twitter/issues>
 
 =head1 AUTHOR
 

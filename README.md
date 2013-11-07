@@ -76,7 +76,7 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
 
     `$option->{if_not_exists}` is available.
 
-- `$umt-`>drop\_table(\[$table, $table, ...\])>
+- `$umt->drop_table([$table, $table, ...])`
 
     Drop tables (status, user, remark and profile\_images).
 
@@ -94,7 +94,7 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
 # BUGS AND LIMITATIONS
 
 Please report any bugs or feature requests to
-[https://github.com/UCormorant/p5-uc-model-twetter/issues](https://github.com/UCormorant/p5-uc-model-twetter/issues)
+[https://github.com/UCormorant/p5-uc-model-twitter/issues](https://github.com/UCormorant/p5-uc-model-twitter/issues)
 
 # AUTHOR
 
