@@ -2,11 +2,6 @@ use t::Utils;
 use Test::More;
 use Uc::Model::Twitter;
 
-BEGIN {
-    eval "use DBD::SQLite";
-    plan skip_all => 'needs DBD::SQLite for testing' if $@;
-}
-
 our $dbh = eval {t::Utils->setup_sqlite_dbh()};
 if ($@) {
     plan skip_all => 'DBD::SQLite setup error';

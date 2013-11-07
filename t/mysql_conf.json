@@ -1,4 +1,4 @@
 {
-    "user": "root", // MySQL USER
+    "user": "", // MYSQL USER
     "pass": "" // MYSQL USERPASSWORD
 }

@@ -9,7 +9,7 @@ BEGIN {
 
 our $dbh = eval {t::Utils->setup_mysql_dbh()};
 if ($@) {
-    plan skip_all => 'needs ALL PRIVILEGES ON test.* for testing';
+    plan skip_all => 'mysql setup error' if $@;
 }
 else {
     plan tests => 5;

@@ -50,8 +50,12 @@
          }
       },
       "test" : {
+         "recommends" : {
+            "Test::mysqld" : "0"
+         },
          "requires" : {
             "Clone" : "0",
+            "DBD::SQLite" : "0",
             "Test::More" : "0.98"
          }
       }
