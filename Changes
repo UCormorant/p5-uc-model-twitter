@@ -2,6 +2,8 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.0.1 2013-11-07T09:34:16Z
+
     - change plugin name
     - change method names (s/_from_tweet$|_with_retweet$//)
         - find_or_create_status
@@ -14,6 +16,10 @@ Revision history for Uc-Model-Twitter
     - write POD
     - minilize
 
+v1.0.0  Tue Jan 29 08:58:28 2013 JST
+
+    - use Teng
+    - rename to Uc::Model::Twitter
+
 1.0.0  Sun Jul 22 14:03:04 2012
        Initial release.
-

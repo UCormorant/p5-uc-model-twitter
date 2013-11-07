@@ -1,1 +1,4 @@
 name = "Uc-Model-Twitter"
+
+[FileGatherer]
+exclude_match = ['^bench/.*']
