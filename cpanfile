@@ -1,10 +1,10 @@
-requires 'DateTime::Format::HTTP';
-requires 'DateTime::Format::MySQL';
+requires 'perl', '5.014';
 requires 'Teng';
 requires 'Teng::Plugin::DBIC::ResultSet';
-requires 'perl', '5.014';
+requires 'DateTime::Format::HTTP';
+requires 'DateTime::Format::MySQL';
 
-on build => sub {
-    requires 'ExtUtils::MakeMaker', '6.59';
+on test => sub {
     requires 'Test::More', '0.98';
+    requires 'Clone';
 };
