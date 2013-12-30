@@ -7,7 +7,7 @@ if ($@) {
     plan skip_all => 'DBD::SQLite setup error';
 }
 else {
-    plan tests => 5;
+    plan tests => 6;
 }
 
 our $class;
@@ -209,7 +209,50 @@ subtest "update_or_create_remark" => sub {
     $class->delete('user');
 };
 
-$class->drop_table();
+subtest "create_table with if_not_exists" => sub {
+    plan tests => 3;
+    my($sth, $got, @got);
+    my $drop_table = 'user';
+    my @expect = qw/profile_image remark status/;
+    my @expect_complete = (@expect, $drop_table);
 
+    $class->create_table(if_not_exists => 0);
+
+    my $status = t::Utils->open_json_file('t/show_status.243149503589400576.json');
+
+    my $tweet = $class->find_or_create_status($status);
+
+    $class->drop_table($drop_table);
+
+    $sth = $dbh->prepare(q{
+        SELECT count(*) FROM sqlite_master
+            WHERE type='table' AND name=?;
+    });
+    @got = ();
+    for my $table (@expect_complete) {
+        $sth->execute($table);
+        push @got, $table if $sth->fetchrow_arrayref->[0];
+    }
+    is_deeply \@got, \@expect, 'checking 3 tables are created';
+
+    $class->create_table();
+
+    @got = ();
+    for my $table (@expect_complete) {
+        $sth->execute($table);
+        push @got, $table if $sth->fetchrow_arrayref->[0];
+    }
+    is_deeply \@got, \@expect_complete, 'checking 4 tables are created';
+
+    $got = $class->single('status', { id => $tweet->id });
+
+    ok $got, "'status' table is not dropped even though drop table 'user'";
+
+    $class->delete('remark');
+    $class->delete('status');
+    $class->delete('user');
+};
+
+$class->drop_table();
 
 done_testing;

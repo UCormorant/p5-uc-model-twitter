@@ -12,7 +12,7 @@ if ($@) {
     plan skip_all => 'mysql setup error' if $@;
 }
 else {
-    plan tests => 5;
+    plan tests => 6;
 }
 
 our $class;
@@ -204,5 +204,41 @@ subtest "update_or_create_remark" => sub {
 
 $class->drop_table();
 
+
+subtest "create_table with if_not_exists" => sub {
+    plan tests => 3;
+    my($sth, $got);
+    my $drop_table = 'user';
+    my $expect = [qw/profile_image remark status/];
+    my $expect_complete = [@$expect, $drop_table];
+
+    $class->create_table(if_not_exists => 0);
+
+    my $status = t::Utils->open_json_file('t/show_status.243149503589400576.json');
+
+    my $tweet = $class->find_or_create_status($status);
+
+    $class->drop_table($drop_table);
+
+    $sth = $class->execute(q{SHOW TABLES});
+    $got = [sort grep { $_ ~~ $expect_complete } map { $_->[0] } @{$sth->fetchall_arrayref}];
+    is_deeply $got, $expect, 'checking 3 tables are created';
+
+    $class->create_table();
+
+    $sth = $class->execute(q{SHOW TABLES});
+    $got = [sort grep { $_ ~~ $expect_complete } map { $_->[0] } @{$sth->fetchall_arrayref}];
+    is_deeply $got, $expect_complete, 'checking 4 tables are created';
+
+    $got = $class->single('status', { id => $tweet->id });
+
+    ok $got, "'status' table is not dropped even though drop table 'user'";
+
+    $class->delete('remark');
+    $class->delete('status');
+    $class->delete('user');
+};
+
+$class->drop_table();
 
 done_testing;

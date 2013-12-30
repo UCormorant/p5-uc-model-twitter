@@ -86,10 +86,14 @@ CREATE TABLE 'profile_image' (
 
 sub create_table_sqlite {
     my $class = shift;
-    my %option = @_;
+    my %option = (
+        if_not_exists => 1,
+        @_,
+    );
+
     my %sql = %SQL;
-    my $dbh = $class->dbh;
     if ($option{if_not_exists}) {
+        my $dbh = $class->dbh;
         for my $table (keys %sql) {
             my $sth = $dbh->prepare(q{
                 SELECT count(*) FROM sqlite_master

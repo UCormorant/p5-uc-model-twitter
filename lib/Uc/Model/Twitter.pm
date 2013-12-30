@@ -1,4 +1,4 @@
-package Uc::Model::Twitter v1.0.1;
+package Uc::Model::Twitter v1.0.2;
 
 use 5.014;
 use warnings;
@@ -232,10 +232,10 @@ You should give this method the hash reference as C<$remark> that include follow
 
 =item C<$umt-E<gt>create_table([$option])>
 
-Initialize database schema.
-!!!If you call this method, all table rows will be deleted!!!
+Create tables if not exists.
 
-C<$option-E<gt>{if_not_exists}> is available.
+If you want to initialize database, call with C<$option-E<gt>{if_not_exists} = 0>.
+B<!!!If you call this method with C<$option-E<gt>{if_not_exists} = 0>, all tables rows will be deleted!!!>
 
 =item C<$umt-E<gt>drop_table([$table, $table, ...])>
 

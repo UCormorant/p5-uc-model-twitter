@@ -116,7 +116,11 @@ CREATE TABLE `profile_image` (
 
 sub create_table_mysql {
     my $class = shift;
-    my %option = @_;
+    my %option = (
+        if_not_exists => 1,
+        @_,
+    );
+
     my %sql = %SQL;
     if ($option{if_not_exists}) {
         my $dbh = $class->dbh;
