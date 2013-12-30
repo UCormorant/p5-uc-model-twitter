@@ -2,6 +2,12 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.0.2 2013-12-30T14:25:55Z
+
+    - fix: create_table option 'if_not_exists' turn be true by default.
+           call "create_table(if_not_exists => 0)" if you want to
+           initialize database.
+
 v1.0.1 2013-11-07T09:34:16Z
 
     - change plugin name

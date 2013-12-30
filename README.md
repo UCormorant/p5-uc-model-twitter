@@ -71,10 +71,10 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
 
 - `$umt->create_table([$option])`
 
-    Initialize database schema.
-    !!!If you call this method, all table rows will be deleted!!!
+    Create tables if not exists.
 
-    `$option->{if_not_exists}` is available.
+    If you want to initialize database, call with `$option->{if_not_exists} = 0`.
+    __!!!If you call this method with `$option->{if_not_exists} = 0`, all tables rows will be deleted!!!__
 
 - `$umt->drop_table([$table, $table, ...])`
 
