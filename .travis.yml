@@ -3,3 +3,4 @@ perl:
   - 5.14
   - 5.16
   - 5.18
+before_install: cpanm https://github.com/UCormorant/p5-teng-plugin-dbic-resultset/archive/0.04.tar.gz

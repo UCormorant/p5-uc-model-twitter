@@ -1,6 +1,7 @@
 /.build/
 /_build/
 /Build
+/Build.bat
 /blib
 
 /carton.lock
@@ -24,4 +25,4 @@ cover_db/
 MYMETA.*
 
 /Uc-Model-Twitter-*
-/_prove*
+/*prove*
