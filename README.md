@@ -48,8 +48,8 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
     If `$tweet` has `user`, it calls `find_or_create_profile` too.
     A profile row will be created whenever user profile update will come.
 
-    When a row is inserted and `` $attr->{user_id} > is geven,
-    you also call `update_or_create_remark` automatically. ``
+    When a row is inserted and `$attr->{user_id}` is geven,
+    you also call `update_or_create_remark` automatically.
 
 - `$profile_row = $umt->find_or_create_profile($user, [$attr])`
 

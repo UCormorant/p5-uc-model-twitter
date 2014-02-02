@@ -212,7 +212,7 @@ Or, it will do C<< $umt-E<gt>find_or_create_status($tweet-E<gt>{retweeted_status
 If C<$tweet> has C<user>, it calls C<find_or_create_profile> too.
 A profile row will be created whenever user profile update will come.
 
-When a row is inserted and C<< $attr->{user_id} > is geven,
+When a row is inserted and C<< $attr->{user_id} >> is geven,
 you also call C<update_or_create_remark> automatically.
 
 =item C<< $profile_row = $umt->find_or_create_profile($user, [$attr]) >>

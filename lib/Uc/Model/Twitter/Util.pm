@@ -97,7 +97,4 @@ sub user_default_value {
     $user;
 }
 
-#use namespace::clean -except => [qw(import)];
-# I don't have any methods.
-
 1; # Magic true value required at end of module
