@@ -4,7 +4,7 @@
       "U=Cormorant <u@chimata.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v0.8.3, CPAN::Meta::Converter version 2.130880",
+   "generated_by" : "Minilla/v0.11.0, CPAN::Meta::Converter version 2.133380",
    "license" : [
       "perl_5"
    ],
@@ -45,19 +45,24 @@
          "requires" : {
             "DateTime::Format::HTTP" : "0",
             "DateTime::Format::MySQL" : "0",
+            "Encode::Locale" : "1.03",
+            "Net::Twitter::Lite::WithAPIv1_1" : "0.12006",
+            "Smart::Options" : "0.053",
             "Teng" : "0",
             "Teng::Plugin::DBIC::ResultSet" : "0",
+            "experimental" : "0.006",
+            "namespace::clean" : "0.24",
             "perl" : "5.014"
          }
       },
       "test" : {
          "recommends" : {
-            "Test::mysqld" : "0"
+            "Test::mysqld" : "0.17"
          },
          "requires" : {
-            "Clone" : "0",
             "DBD::SQLite" : "0",
-            "Test::More" : "0.98"
+            "Test::More" : "0.98",
+            "Test::More::Hooks" : "0.12"
          }
       }
    },

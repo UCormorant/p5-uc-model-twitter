@@ -3,6 +3,8 @@ package Uc::Model::Twitter v1.0.2;
 use 5.014;
 use warnings;
 use utf8;
+use experimental qw(smartmatch);
+
 use parent 'Teng';
 __PACKAGE__->load_plugin('DBIC::ResultSet');
 
@@ -11,6 +13,8 @@ use DBI qw(:sql_types);
 use Uc::Model::Twitter::Util;
 use autouse 'Uc::Model::Twitter::Util::MySQL'  => qw(create_table_mysql  drop_table_mysql );
 use autouse 'Uc::Model::Twitter::Util::SQLite' => qw(create_table_sqlite drop_table_sqlite);
+
+use namespace::clean;
 
 sub find_or_create_status {
     my ($self, $tweet, $attr) = @_;
@@ -181,7 +185,7 @@ See L</lib/Uc/Model/Twitter/Schema.pm>.
 
 =over 2
 
-=item C<$tweet_row = $umt-E<gt>find_or_create_status($tweet, [$attr])>
+=item C<< $tweet_row = $umt->find_or_create_status($tweet, [$attr]) >>
 
 Find or create a row into C<status> table.
 Returns the inserted row object.
@@ -200,25 +204,25 @@ If this is given, C<update_or_create_remark> ignores false values when update C<
 
 =item * C<retweeted_status>
 
-If this is given, C<update_or_create_remark> uses C<$attr-E<gt>{retweeted_status}{id}> as retweet status id.
-Or, it will do C<$umt-E<gt>find_or_create_status($tweet-E<gt>{retweeted_status})> and get the status id from returned value.
+If this is given, C<update_or_create_remark> uses C<< $attr->{retweeted_status}{id} >> as retweet status id.
+Or, it will do C<< $umt-E<gt>find_or_create_status($tweet-E<gt>{retweeted_status}) >> and get the status id from returned value.
 
 =back
 
 If C<$tweet> has C<user>, it calls C<find_or_create_profile> too.
 A profile row will be created whenever user profile update will come.
 
-When a row is inserted and C<$attr-E<gt>{user_id}> is geven,
+When a row is inserted and C<< $attr->{user_id} > is geven,
 you also call C<update_or_create_remark> automatically.
 
-=item C<$profile_row = $umt-E<gt>find_or_create_profile($user, [$attr])>
+=item C<< $profile_row = $umt->find_or_create_profile($user, [$attr]) >>
 
 Find or create a row into C<user> table.
 Returns the inserted row object.
 
 Profile rows is just user profile, not user object, so one user has many profile rows.
 
-=item C<$remark_row = $umt-E<gt>update_or_create_remark($remark, [$attr])>
+=item C<< $remark_row = $umt->update_or_create_remark($remark, [$attr]) >>
 
 Update or create a row into C<remark> table.
 Returns the updated row object.
@@ -230,14 +234,14 @@ You should give this method the hash reference as C<$remark> that include follow
     favorited => true or false,
     retweeted => true or false,
 
-=item C<$umt-E<gt>create_table([$option])>
+=item C<< $umt->create_table([$option]) >>
 
 Create tables if not exists.
 
-If you want to initialize database, call with C<$option-E<gt>{if_not_exists} = 0>.
-B<!!!If you call this method with C<$option-E<gt>{if_not_exists} = 0>, all tables rows will be deleted!!!>
+If you want to initialize database, call with C<< $option->{if_not_exists} = 0 >>.
+B<!!!If you call this method with C<< $option->{if_not_exists} = 0 >>, all tables rows will be deleted!!!>
 
-=item C<$umt-E<gt>drop_table([$table, $table, ...])>
+=item C<< $umt->drop_table([$table, $table, ...]) >>
 
 Drop tables (status, user, remark and profile_images).
 
@@ -248,6 +252,8 @@ Drop tables (status, user, remark and profile_images).
 =over 2
 
 =item L<perl> >= 5.14
+
+=item L<experimental>
 
 =item L<Teng>
 
@@ -270,11 +276,11 @@ L<https://github.com/UCormorant/p5-uc-model-twitter/issues>
 
 U=Cormorant E<lt>u@chimata.orgE<gt>
 
-=head1 LICENSE
+=head1 LICENCE AND COPYRIGHT
 
 Copyright (C) U=Cormorant.
 
-This library is free software; you can redistribute it and/or
+This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
 
 =cut

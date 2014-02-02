@@ -1,0 +1,7 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Uc::Model::Twitter::Crawler;
+
+Uc::Model::Twitter::Crawler->new(configure_encoding => 1)->run(@ARGV);
+# vim: set ft=perl :

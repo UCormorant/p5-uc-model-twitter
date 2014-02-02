@@ -1,4 +1,8 @@
 name = "Uc-Model-Twitter"
+badges = ['travis']
 
 [FileGatherer]
 exclude_match = ['^bench/.*']
+
+[tap_harness_args]
+--rc = "t/proverc"

@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/UCormorant/p5-uc-model-twitter.png?branch=master)](https://travis-ci.org/UCormorant/p5-uc-model-twitter)
 # NAME
 
 Uc::Model::Twitter - Teng model class for tweet
@@ -20,7 +21,7 @@ Uc::Model::Twitter is the teng model class for Twitter's tweets.
 
 # TABLE
 
-See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
+See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
 
 # METHODS
 
@@ -47,8 +48,8 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
     If `$tweet` has `user`, it calls `find_or_create_profile` too.
     A profile row will be created whenever user profile update will come.
 
-    When a row is inserted and `$attr->{user_id}` is geven,
-    you also call `update_or_create_remark` automatically.
+    When a row is inserted and `` $attr->{user_id} > is geven,
+    you also call `update_or_create_remark` automatically. ``
 
 - `$profile_row = $umt->find_or_create_profile($user, [$attr])`
 
@@ -82,14 +83,15 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib/Uc/Model/Twitter/Schema.pm).
 
 # DEPENDENCIES
 
-- [perl](http://search.cpan.org/perldoc?perl) >= 5.14
-- [Teng](http://search.cpan.org/perldoc?Teng)
+- [perl](https://metacpan.org/pod/perl) >= 5.14
+- [experimental](https://metacpan.org/pod/experimental)
+- [Teng](https://metacpan.org/pod/Teng)
 - Teng::Plugin::DBIC::ResultSet
 
     [https://github.com/UCormorant/p5-teng-plugin-dbic-resultset](https://github.com/UCormorant/p5-teng-plugin-dbic-resultset)
 
-- [DateTime::Format::HTTP](http://search.cpan.org/perldoc?DateTime::Format::HTTP)
-- [DateTime::Format::MySQL](http://search.cpan.org/perldoc?DateTime::Format::MySQL)
+- [DateTime::Format::HTTP](https://metacpan.org/pod/DateTime::Format::HTTP)
+- [DateTime::Format::MySQL](https://metacpan.org/pod/DateTime::Format::MySQL)
 
 # BUGS AND LIMITATIONS
 
@@ -100,9 +102,9 @@ Please report any bugs or feature requests to
 
 U=Cormorant <u@chimata.org>
 
-# LICENSE
+# LICENCE AND COPYRIGHT
 
 Copyright (C) U=Cormorant.
 
-This library is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See [perlartistic](http://search.cpan.org/perldoc?perlartistic).
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See [perlartistic](https://metacpan.org/pod/perlartistic).

@@ -5,6 +5,7 @@ use warnings;
 use utf8;
 use bigint;
 use parent qw(Exporter);
+use experimental qw(smartmatch);
 
 use Carp qw(croak);
 use DBI qw(:sql_types);
@@ -12,6 +13,16 @@ use Encode qw(find_encoding);
 use Digest::MD5 qw(md5_hex);
 use DateTime::Format::HTTP;
 use DateTime::Format::MySQL;
+
+our @EXPORT = qw(
+    format_datetime
+    deflate_utf8
+    boolify
+    numify
+    is_integer
+    get_profile_id
+    user_default_value
+);
 
 our @USER_VALUE_FOR_DIGEST = qw(
     screen_name
@@ -46,22 +57,12 @@ our @USER_VALUE_FOR_DIGEST = qw(
     profile_background_tile
 );
 
-our @EXPORT = qw(
-    format_datetime
-    deflate_utf8
-    boolify
-    numify
-    is_integer
-    get_profile_id
-    user_default_value
-);
-
-our $CODEC = find_encoding('utf8');
+my $CODEC = find_encoding('utf8');
 
 sub format_datetime {
     my $value = shift;
     $value = DateTime::Format::HTTP->parse_datetime($value =~ s/\+0000/GMT/r) if not ref $value;
-    croak "format_datetime needs a date text or a DateTime object"            if not ref $value eq 'DateTime';
+    croak "format_datetime requires a date text or a DateTime object"            if not ref $value eq 'DateTime';
     DateTime::Format::MySQL->format_datetime($value);
 }
 
@@ -95,5 +96,8 @@ sub user_default_value {
     }
     $user;
 }
+
+#use namespace::clean -except => [qw(import)];
+# I don't have any methods.
 
 1; # Magic true value required at end of module
