@@ -114,8 +114,8 @@ sub main {
 
 sub logging {
     if (scalar @tweets) {
-#        my $txn = $schema->txn_scope;
+        my $txn = $schema->txn_scope;
         $schema->find_or_create_status(shift @tweets) while @tweets;
-#        $txn->commit;
+        $txn->commit;
     }
 }
