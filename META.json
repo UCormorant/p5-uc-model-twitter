@@ -46,7 +46,8 @@
             "DateTime::Format::HTTP" : "0",
             "DateTime::Format::MySQL" : "0",
             "Encode::Locale" : "1.03",
-            "Net::Twitter::Lite::WithAPIv1_1" : "0.12006",
+            "Net::OAuth" : "0.26",
+            "Net::Twitter::Lite" : "0.12006",
             "Smart::Options" : "0.053",
             "Teng" : "0",
             "Teng::Plugin::DBIC::ResultSet" : "0",
@@ -78,5 +79,5 @@
          "web" : "https://github.com/UCormorant/p5-uc-model-twitter"
       }
    },
-   "version" : "v1.0.2"
+   "version" : "v1.0.3"
 }

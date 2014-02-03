@@ -2,6 +2,29 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.0.3 2014-02-03T09:46:03Z
+
+    - added ucrawl-tweet. it's still incomplete.
+        - it will be the script to crawl and store
+          tweets into your database.
+
+    - muted warnings 'experimental::smartmatch.'
+      so, this module supports v5.18.
+
+    - added dependencies. newly requires:
+        - experimental
+        - namespace::clean
+        - Encode::Locale
+        - Smart::Options
+        - Net::OAuth
+        - Net::Twitter::Lite
+
+    - added badge of travis ci.
+
+    - fixed tests:
+        - unexpected test plan ran if DB setup was failed.
+        - took measures to some warnings.
+
 v1.0.2 2013-12-30T14:25:55Z
 
     - fix: create_table option 'if_not_exists' turn be true by default.
