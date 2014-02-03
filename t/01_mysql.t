@@ -7,16 +7,16 @@ Uc::Model::Twitter->load_plugin('Count');
 
 BEGIN {
     eval "use DBD::mysql";
-    plan skip_all => 'test requires DBD::mysql for testing' if $@;
+    if ($@) {
+        plan skip_all => 'test requires DBD::mysql for testing';
+    }
+    else {
+        plan tests => 1;
+    }
 }
 
 my $DB_HANDLE = eval {t::Util->setup_mysql_dbh()};
-if ($@) {
-    plan skip_all => 'mysql setup error' if $@;
-}
-else {
-    plan tests => 1;
-}
+if ($@) { fail 'mysql setup error'; }
 
 subtest "mysql test" => sub {
     my $class;

@@ -4,4 +4,7 @@ perl:
   - 5.16
   - 5.18
 before_install:
-  - "cpanm -n https://github.com/UCormorant/p5-teng-plugin-dbic-resultset/archive/0.05.tar.gz"
+  - cpanm --quiet --notest Test::mysqld git://github.com/kan/coveralls-perl.git git://github.com/UCormorant/p5-teng-plugin-dbic-resultset.git
+script: perl Build.PL && ./Build testcover
+after_success:
+  - cover -report coveralls

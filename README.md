@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/UCormorant/p5-uc-model-twitter.png?branch=master)](https://travis-ci.org/UCormorant/p5-uc-model-twitter)
+[![Build Status](https://travis-ci.org/UCormorant/p5-uc-model-twitter.png?branch=master)](https://travis-ci.org/UCormorant/p5-uc-model-twitter) [![Coverage Status](https://coveralls.io/repos/UCormorant/p5-uc-model-twitter/badge.png?branch=master)](https://coveralls.io/r/UCormorant/p5-uc-model-twitter?branch=master)
 # NAME
 
 Uc::Model::Twitter - Teng model class for tweet

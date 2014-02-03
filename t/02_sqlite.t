@@ -5,13 +5,10 @@ use Test::More::Hooks;
 use Uc::Model::Twitter;
 Uc::Model::Twitter->load_plugin('Count');
 
+plan tests => 1;
+
 my $DB_HANDLE = eval {t::Util->setup_sqlite_dbh()};
-if ($@) {
-    plan skip_all => 'DBD::SQLite setup error';
-}
-else {
-    plan tests => 1;
-}
+if ($@) { fail 'DBD::SQLite setup error'; }
 
 subtest "sqlite test" => sub {
     my $class;

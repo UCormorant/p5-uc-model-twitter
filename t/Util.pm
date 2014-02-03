@@ -39,7 +39,7 @@ sub setup_mysql_dbh {
                 $MYSQLD = Test::mysqld->new(my_cnf => {
                     'skip-networking' => '',
                 });
-                warn $Test::mysqld::errstr;
+                warn $Test::mysqld::errstr unless $MYSQLD;
             }
         }
         if ($MYSQLD) {

@@ -1,5 +1,5 @@
 name = "Uc-Model-Twitter"
-badges = ['travis']
+badges = ['travis', 'coveralls']
 
 [FileGatherer]
 exclude_match = ['^bench/.*']
