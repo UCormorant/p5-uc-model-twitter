@@ -6,7 +6,7 @@ use utf8;
 
 use Encode::Locale qw(decode_argv);
 use Smart::Options;
-use Net::Twitter::Lite::WithAPIv1_1 0.12006;
+use Net::Twitter::Lite::WithAPIv1_1;
 
 use Uc::Model::Twitter;
 $UC::Model::Twitter::Crawler::VERSION = Uc::Model::Twitter->VERSION;
@@ -102,6 +102,12 @@ Uc::Model::Twitter::Crawler is the generater class of ucrawl-tweet command's ins
 
 =item L<perl> >= 5.14
 
+=item L<Encode::Locale> >= 1.03
+
+=item L<Smart::Options> >= 0.053
+
+=item L<Net::Twitter::Lite> >= 0.12006
+
 =back
 
 =head1 BUGS AND LIMITATIONS
@@ -123,6 +129,5 @@ modify it under the same terms as Perl itself. See L<perlartistic>.
 =head1 SEE ALSO
 
 L<https://github.com/UCormorant/p5-uc-model-twitter>
-
 
 =cut

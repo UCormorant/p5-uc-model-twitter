@@ -9,7 +9,7 @@ requires 'DateTime::Format::MySQL';
 # for ucrawl-tweet
 requires 'Encode::Locale', '1.03';
 requires 'Smart::Options', '0.053';
-requires 'Net::Twitter::Lite::WithAPIv1_1', '0.12006';
+requires 'Net::Twitter::Lite', '0.12006';
 
 on test => sub {
     requires 'Test::More', '0.98';
