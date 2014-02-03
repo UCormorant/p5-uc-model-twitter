@@ -1,71 +1,78 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 
 use 5.014;
-use lib qw(lib ../example);
-use lib::Utils;
-use autodie;
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catfile catdir);
+use lib catdir(dirname(__FILE__), 'lib');
+use lib catdir(dirname(__FILE__), '..', 'lib');
+use lib catdir(dirname(__FILE__), '..', 'examples');
 
-use Benchmark qw(:all);
+use lib::Util;
+
+use autodie;
+use Config::Pit qw(pit_get);
+use Benchmark qw(:all :hireswallclock);
 
 use Uc::Model::Twitter;
 use Uc::Twitter::Schema;
-use Getopt::Long;
-use Config::Pit;
 
 local $| = 1;
+my $collect = scalar @ARGV ? shift : undef;
+my $query   = scalar @ARGV ? shift : undef;
+   $collect = 200    if !$collect or $collect < 1;
+   $query   = '%I %' if !$query;
+my $conf_app  = pit_get('dev.twitter.com', require =>{
+    consumer_key    => 'your twitter consumer_key',
+    consumer_secret => 'your twitter consumer_secret',
+});
+my $conf_user = +{};
+twitter_agent($conf_app, $conf_user);
 
-my ( $collect, $time, $query, $sqlite_db, $mysql_db, $help ) = ('') x 5;
-my $result = GetOptions(
-    "c|collect=i"       => \$collect,
-    "t|time=i"          => \$time,
-    "q|query=s"         => \$query,
-    "sqlite-database=s" => \$sqlite_db,
-    "mysql-database=s"  => \$mysql_db,
-    "h|help|?"          => \$help,
-);
-$collect = 200    if !$collect or $collect < 1;
-$time    = 5      if !$time    or $time    < 1;
-$query   = '%I %' if !$query;
-
-say <<"_HELP_" and exit if scalar(@ARGV) < 2;
-Usage: $0 -c 20 username password
-    -c --collect:         tweet cllection count(min 1) default 200
-    -t --time:            bench loop times. default 5
-    -q --query:           search query. default '%I %'
-       --sqlite-database: default ':memory:'
-       --mysql-database:  default 'test'
-_HELP_
-
-my $my_conf = pit_get('mysql', require => {
-    user => '',
-    pass => '',
-}) or die "pit_get('mysql') is failed";
+my $sqlite_db = sprintf "%s.sqlite", basename(__FILE__) =~ s/\.\w+$//r;
+   $sqlite_db = catfile(dirname(__FILE__), $sqlite_db);
+#my $sqlite_db = undef;
+my $mysql_db  = undef;
 my $dbh_sqlite = setup_dbh('SQLite',$sqlite_db) or die "dbh_sqlite connect error";
-my $dbh_mysql  = setup_dbh('mysql',$mysql_db,$my_conf->{user},$my_conf->{pass}) or die "dbh_mysql connect error";
+my $dbh_mysql  = setup_dbh('mysql',$mysql_db) or die "dbh_mysql connect error";
 
-my $tweets = sample_stream($ARGV[0], $ARGV[1], $collect);
+my $tweets = sample_stream({
+    consumer_key    => $conf_app->{consumer_key},
+    consumer_secret => $conf_app->{consumer_secret},
+    token           => $conf_user->{token},
+    token_secret    => $conf_user->{token_secret},
+}, $collect);
 
 my ($umt_schema_sqlite, $umt_schema_mysql);
 print "create table with SQLite... ";
 $umt_schema_sqlite = Uc::Model::Twitter->new( dbh => $dbh_sqlite );
-$umt_schema_sqlite->create_table();
+$umt_schema_sqlite->create_table(if_not_exists => 0);
 say "done.";
 print "create table with MySQL... ";
 $umt_schema_mysql  = Uc::Model::Twitter->new( dbh => $dbh_mysql  );
-$umt_schema_mysql->create_table();
+$umt_schema_mysql->create_table(if_not_exists => 0);
 say "done.";
+
 insert_tweets($umt_schema_sqlite);
 insert_tweets($umt_schema_mysql);
 
 $umt_schema_sqlite->search('status', { text => { like => $query } })->next or die "'$query' is not found";
 
-cmpthese(timethese($time, {
+undef $umt_schema_sqlite;
+undef $umt_schema_mysql;
+
+cmpthese(5 => {
     umt_sch_sq => get_these_umt($dbh_sqlite),
     umt_sch_my => get_these_umt($dbh_mysql),
 
     uts_sch_sq => get_these_uts($dbh_sqlite),
     uts_sch_my => get_these_uts($dbh_mysql),
-}));
+}, 'auto');
+
+END {
+    undef $dbh_sqlite;
+    undef $dbh_mysql;
+    unlink $sqlite_db if -e $sqlite_db;
+}
 
 exit;
 
@@ -74,7 +81,7 @@ sub insert_tweets {
 
     print $umt_schema->dbh->{Driver}{Name}." insert... ";
     my $txn = $umt_schema->txn_scope;
-    $umt_schema->find_or_create_status_from_tweet($_) for @$tweets;
+    $umt_schema->find_or_create_status($_) for @$tweets;
     $txn->commit;
     say "done.";
 }
@@ -105,4 +112,20 @@ sub get_these_uts {
     };
 }
 
-1;
+__END__
+streamer starts to read... connected.
+collect 200 tweets... done.
+create table with SQLite... done.
+create table with MySQL... done.
+SQLite insert... done.
+mysql insert... done.
+Benchmark: timing 5 iterations of umt_sch_my, umt_sch_sq, uts_sch_my, uts_sch_sq...
+umt_sch_my: 4.11039 wallclock secs ( 2.04 usr +  0.17 sys =  2.22 CPU) @  2.26/s (n=5)
+umt_sch_sq: 2.36982 wallclock secs ( 1.95 usr +  0.36 sys =  2.31 CPU) @  2.17/s (n=5)
+uts_sch_my: 3.51076 wallclock secs ( 2.59 usr +  0.05 sys =  2.64 CPU) @  1.90/s (n=5)
+uts_sch_sq: 2.52695 wallclock secs ( 2.34 usr +  0.03 sys =  2.37 CPU) @  2.11/s (n=5)
+             Rate uts_sch_my uts_sch_sq umt_sch_sq umt_sch_my
+uts_sch_my 1.90/s         --       -10%       -12%       -16%
+uts_sch_sq 2.11/s        11%         --        -3%        -7%
+umt_sch_sq 2.17/s        14%         3%         --        -4%
+umt_sch_my 2.26/s        19%         7%         4%         --

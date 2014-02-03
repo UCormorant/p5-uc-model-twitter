@@ -1,16 +1,19 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 
 use 5.014;
-use lib::Utils;
-use autodie;
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catdir);
+use lib catdir(dirname(__FILE__));
+use lib catdir(dirname(__FILE__), '..', 'lib');
 
+use lib::Util;
 use Uc::Model::Twitter;
+
+use autodie;
 use Getopt::Long;
 use Config::Pit;
 
 local $| = 1;
-
-map { $_ = codec->decode($_); } @ARGV; # flagged utf8
 
 my ( $driver, $database, $or_search, $ignore_retweet, $help ) = ('') x 5;
 my ( @text, @name, @screen_name, @status_id, @user_id, @datetime );
@@ -53,8 +56,8 @@ my $db_user = '';
 my $db_pass = '';
 if ($driver eq 'mysql') {
     my $mysql_conf = pit_get($driver, require => {
-        user => '',
-        pass => '',
+        user => 'mysql database user',
+        pass => 'mysql user password',
     });
     $db_user = $mysql_conf->{user};
     $db_pass = $mysql_conf->{pass};
@@ -110,5 +113,3 @@ say sprintf "%s %${spacer}s: %s", @{$_}[1,2,3] for sort { $b->[0] <=> $a->[0] } 
 say "$count tweets.";
 
 exit;
-
-1;
