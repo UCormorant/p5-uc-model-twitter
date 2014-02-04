@@ -3,5 +3,6 @@ use strict;
 use warnings;
 use Uc::Model::Twitter::Crawler;
 
+local $| = 1;
 Uc::Model::Twitter::Crawler->new(configure_encoding => 1)->run(@ARGV);
 # vim: set ft=perl :

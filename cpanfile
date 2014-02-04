@@ -8,9 +8,12 @@ requires 'DateTime::Format::MySQL';
 
 # for ucrawl-tweet
 requires 'Encode::Locale', '1.03';
-requires 'Smart::Options', '0.053';
+requires 'File::HomeDir', '1.00';
 requires 'Net::OAuth', '0.26';
 requires 'Net::Twitter::Lite', '0.12006';
+requires 'Smart::Options', '0.053';
+requires 'Term::ReadKey', '2.31';
+requires 'TOML', '0.92';
 
 on test => sub {
     requires 'Test::More', '0.98';
