@@ -28,6 +28,7 @@ sub configure_encoding {
 sub get_option_parser {
     my $parser = Smart::Options->new;
 
+    my $script_file = basename($0);
     my $default_file = get_default_file();
     my @default_options = (
         c => { alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
@@ -40,13 +41,13 @@ sub get_option_parser {
 
     # manual
     chomp(my $manual = <<"_USAGE_");
-    Usage: $0 <command> -h
+Usage: $script_file <command> -h
 _USAGE_
     $parser->usage($manual);
 
     # command: conf
     chomp(my $usage_conf = <<"_USAGE_CONF_");
-Usage: $0 conf [-c config.toml]
+Usage: $script_file conf [-c config.toml]
 
 this command configures Twitter consumer key, secret key and authentication information.
 these settings will be saved in '$default_file' or the file which is geven with -c option
@@ -57,7 +58,7 @@ _USAGE_CONF_
 
     # command: user
     chomp(my $usage_user = <<"_USAGE_USER_");
-Usage: $0 user [<screen_name>] [-c config.toml]
+Usage: $script_file user [<screen_name>] [-c config.toml]
 
 crawls <screen_name>'s recent tweets.
 command uses the authenticating user if <screen_name> is not given.
@@ -66,7 +67,7 @@ _USAGE_USER_
 
     # command: fav
     chomp(my $usage_fav = <<"_USAGE_FAV_");
-Usage: $0 fav [<screen_name>] [-c config.toml]
+Usage: $script_file fav [<screen_name>] [-c config.toml]
 
 crawls <screen_name>'s recent favorites.
 command uses the authenticating user if <screen_name> is not given.
@@ -75,7 +76,7 @@ _USAGE_FAV_
 
     # command: mention
     chomp(my $usage_mention = <<"_USAGE_MENTION_");
-Usage: $0 mention [-c config.toml]
+Usage: $script_file mention [-c config.toml]
 
 crawls recent mentions for the authenticating user.
 _USAGE_MENTION_
@@ -158,7 +159,7 @@ sub setup_dbh_mysql {
 sub call_api {
     my ($option, $arg) = @_;
     while (($option->{all} or $option->{page}--) && _api($option, $arg)) {
-        say sprintf "rest of page: %s", $option->{all} ? 'all' : $option->{page};
+        say sprintf "rest of page: %s (max_id: %s)", ($option->{all} ? 'all' : $option->{page}), $arg->{option}{max_id};
     }
 }
 
@@ -232,6 +233,7 @@ sub conf {
     my $pin = '';
     my $retry = 3;
     my $nt = new_agent();
+    my $script_file = basename($0);
 
     if (-e $filename) {
         $config = load_toml($filename);
@@ -315,8 +317,8 @@ sub conf {
     say "ok.";
 
     FINISH_CONFIGURE:
-    say "$0 is configured. command '$0 -h' to check how to use.";
-    say "sample command: '$0 user $config->{screen_name} -c $filename'";
+    say "$script_file is configured. command '$script_file -h' to check how to use.";
+    say "sample command: '$script_file user $config->{screen_name} -c $filename'";
 
     save_toml($filename, $config);
 }

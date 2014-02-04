@@ -2,6 +2,15 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.1.0 2014-02-04T10:24:33Z
+
+    - added ucrawl-tweet command: conf, user, fav and mention
+
+    - updated dependencies:
+        - File::HomeDir >= 1.00
+        - Term::ReadKey >= 2.31
+        - TOML >= 0.92
+
 v1.0.3 2014-02-03T09:46:03Z
 
     - added ucrawl-tweet. it's still incomplete.
