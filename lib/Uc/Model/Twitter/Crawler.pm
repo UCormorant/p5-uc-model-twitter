@@ -109,7 +109,7 @@ sub load_toml {
 sub save_toml {
     my $file = shift;
     my $data = shift;
-    map { delete $data->{$_} if $data->{$_} eq '' } keys %$data;
+    map { delete $data->{$_} if not defined $data->{$_} or $data->{$_} eq '' } keys %$data;
     my $toml = to_toml($data);
     open my($fh), '>:encoding(utf8)', $file;
     print $fh $toml;
@@ -153,7 +153,9 @@ sub setup_dbh_mysql {
     my $db = shift || 'test';
     my $user = shift;
     my $pass = shift;
-    DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    $dbh->do('SET NAMES utf8mb4');
+    $dbh;
 }
 
 sub call_api {
@@ -286,7 +288,7 @@ sub conf {
     if (exists $config->{driver_name}) {
         my $anser = input_data("do you want to update database settings? [y/N]: ");
         if ($anser eq '' || $anser =~ /^[nN]/) {
-            goto FINISH_CONFIGURE;
+            goto CREATE_TABLE;
         }
     }
     INPUT_DB_DRIVER: print "\n"; $retry--;
@@ -315,6 +317,20 @@ sub conf {
         }
     }
     say "ok.";
+
+    CREATE_TABLE:
+    {
+        my $anser = input_data("do you want to create table in database '$config->{db_name}'? [Y/n]: ");
+        if ($anser =~ /^[nN]/) {
+            goto FINISH_CONFIGURE;
+        }
+        else {
+            my $anser = input_data("do you want to do 'force create'? [y/N]: ");
+            my $if_not_exists = $anser =~ /[nN]/ ? 1 : 0;
+            my $schema = Uc::Model::Twitter->new( dbh => setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}) );
+            $schema->create_table(if_not_exists => $if_not_exists);
+        }
+    }
 
     FINISH_CONFIGURE:
     say "$script_file is configured. command '$script_file -h' to check how to use.";

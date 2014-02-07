@@ -18,6 +18,7 @@ requires 'TOML', '0.92';
 on test => sub {
     requires 'Test::More', '0.98';
     requires 'Test::More::Hooks', '0.12';
+    requires 'Test::Exception', '0.32';
     requires 'DBD::SQLite';
 
     recommends 'Test::mysqld', '0.17';

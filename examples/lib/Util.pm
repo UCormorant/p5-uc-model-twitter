@@ -48,7 +48,9 @@ sub setup_dbh_mysql {
     my $db = shift || 'test';
     my $user = shift;
     my $pass = shift;
-    DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    $dbh->do('SET NAMES utf8mb4');
+    $dbh;
 }
 
 sub sample_stream {
@@ -68,7 +70,6 @@ sub sample_stream {
         on_tweet => sub {
             my $tweet = shift;
             if (!$tweet->{user} or $tweet->{text} eq '') { return; }
-            if ($tweet->{text} =~ /[^[:ascii:]]/) { return; }
             push @tweets, $tweet;
             $cv->send if scalar @tweets == $count;
         },

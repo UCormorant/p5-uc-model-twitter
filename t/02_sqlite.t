@@ -1,6 +1,7 @@
 use t::Util;
 use Test::More;
 use Test::More::Hooks;
+use Test::Exception;
 
 use Uc::Model::Twitter;
 Uc::Model::Twitter->load_plugin('Count');
@@ -18,8 +19,22 @@ subtest "sqlite test" => sub {
     plan tests => 2;
 
     subtest "connect and setup database" => sub {
-        plan tests => 3;
+        my $DB_DRIVER;
+        before { $DB_DRIVER = $DB_HANDLE->{Driver}{Name}; };
+        after  { $DB_HANDLE->{Driver}{Name} = $DB_DRIVER; };
+
+        plan tests => 4;
+
         isa_ok $class, 'Uc::Model::Twitter', '$class';
+
+        subtest "create and drop table (with unknown driver)" => sub {
+            plan tests => 2;
+            $DB_HANDLE->{Driver}{Name} = 'unknown';
+            throws_ok { $class->create_table; } qr/'$DB_HANDLE->{Driver}{Name}'/,
+                'create_table() throw an error that includes driver name';
+            throws_ok { $class->drop_table; } qr/'$DB_HANDLE->{Driver}{Name}'/,
+                'drop_table() throw an error that includes driver name';
+        };
 
         subtest "create and drop tables" => sub {
             plan tests => 2;
