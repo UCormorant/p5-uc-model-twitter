@@ -2,6 +2,20 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.1.1 2014-02-07T04:21:59Z
+
+    - update ucrawl-tweet:
+        - added 'create table' phase into 'conf'
+        - $dbh->do('SET NAMES utf8mb4') when setup mysql dbh.
+
+    - update example:
+        - $dbh->do('SET NAMES utf8mb4') when setup mysql dbh.
+
+    - update dependencies:
+        - Test::Exception >= 0.32
+
+    - added fail test for 'create_table' and 'drop_table'
+
 v1.1.0 2014-02-04T10:24:33Z
 
     - added ucrawl-tweet command: conf, user, fav and mention
