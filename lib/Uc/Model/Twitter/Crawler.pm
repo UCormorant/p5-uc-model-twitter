@@ -16,7 +16,7 @@ use Term::ReadKey qw(ReadMode);
 use TOML qw(from_toml to_toml);
 
 use Uc::Model::Twitter;
-$UC::Model::Twitter::Crawler::VERSION = Uc::Model::Twitter->VERSION;
+$Uc::Model::Twitter::Crawler::VERSION = Uc::Model::Twitter->VERSION;
 
 sub configure_encoding {
     STDIN->binmode(":encoding(console_in)");
@@ -43,7 +43,9 @@ sub get_option_parser {
     chomp(my $manual = <<"_USAGE_");
 Usage: $script_file <command> -h
 _USAGE_
-    $parser->usage($manual);
+    $parser->usage($manual)->options(
+        v => { alias => 'version', type => 'Bool', describe => 'show version' },
+    );
 
     # command: conf
     chomp(my $usage_conf = <<"_USAGE_CONF_");
@@ -82,6 +84,17 @@ crawls recent mentions for the authenticating user.
 _USAGE_MENTION_
     $parser->subcmd( mention => Smart::Options->new->usage($usage_mention)->options(@default_options) );
 
+    # command: status
+    chomp(my $usage_status = <<"_USAGE_STATUS_");
+Usage: $script_file status [<status_id> [<status_id>]] [-c config.toml]
+
+crawls <status_id> status.
+command read STDIN if '-' is given as <status_id>
+_USAGE_STATUS_
+    $parser->subcmd( status => Smart::Options->new->usage($usage_status)->options(
+        c => { alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
+        'no-store' => { alias => 'no_store', type => 'Bool',               describe => 'not store crawled tweets' },
+    ) );
     $parser;
 }
 
@@ -175,11 +188,7 @@ sub _api {
     my $count   = 0;
 
     my $tweets = eval { $nt->$method($api_arg); };
-    if ($@) {
-        my $name = $api_arg->{screen_name} // "user_id=$api_arg->{user_id}";
-        say "$name: $@";
-    }
-    else {
+    unless ($@) {
         my $txn = $schema->txn_scope;
         for my $t (@$tweets) {
             $schema->find_or_create_status($t) unless $option->{no_store};
@@ -189,6 +198,21 @@ sub _api {
         }
         $txn->commit;
         $count = scalar @$tweets;
+    }
+    else {
+        my $name = $api_arg->{screen_name} // "user_id=$api_arg->{user_id}";
+        say "$name: $@";
+        if (ref $@ and $@->isa('Net::Twitter::Lite::Error')) {
+            my $limit = grep {
+                say sprintf "code=$_->{code}: $_->{message}";
+                $_->{code} == 88;
+            } @{$@->twitter_error->{errors}};
+
+            if ($limit) {
+                say sprintf "rate limit resets after %d seconds",
+                    $@->http_response->headers->{'x-rate-limit-reset'}-time;
+            }
+        }
     }
 
     $count;
@@ -222,6 +246,8 @@ sub run {
     elsif ($command eq 'user')    { $self->user($option->{cmd_option}); }
     elsif ($command eq 'fav')     { $self->fav($option->{cmd_option}); }
     elsif ($command eq 'mention') { $self->mention($option->{cmd_option}); }
+    elsif ($command eq 'status')  { $self->status($option->{cmd_option}); }
+    elsif ($option->{version})    { say $self->VERSION; }
     else                          { $parser->showHelp; }
 
     $option;
@@ -341,21 +367,21 @@ sub conf {
 
 sub user {
     my ($self, $option) = @_;
-    $self->api('user_timeline', $option);
+    $self->crawl('user_timeline', $option);
 }
 
 sub fav {
     my ($self, $option) = @_;
-    $self->api('favorites', $option);
+    $self->crawl('favorites', $option);
 }
 
 sub mention {
     my ($self, $option) = @_;
     $option->{_} = [];
-    $self->api('mentions', $option);
+    $self->crawl('mentions', $option);
 }
 
-sub api {
+sub crawl {
     my ($self, $method, $option) = @_;
     my $filename = $option->{config};
     die "'$filename' is not found. you should '$0 conf' before this command."
@@ -391,6 +417,58 @@ sub api {
     }
 }
 
+sub status {
+    my ($self, $option) = @_;
+    my $filename = $option->{config};
+    die "'$filename' is not found. you should '$0 conf' before this command."
+        unless -e $filename;
+
+    my $config = load_toml($filename);
+    my $nt = new_agent(
+        consumer_key        => $config->{consumer_key},
+        consumer_secret     => $config->{consumer_secret},
+        access_token        => $config->{token},
+        access_token_secret => $config->{token_secret},
+    );
+    my $schema = Uc::Model::Twitter->new( dbh => setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}) );
+
+    if (scalar @{$option->{_}} == 1 and $option->{_}[0] eq '-') {
+        chomp(@{$option->{_}} = <STDIN>);
+    }
+
+    while (my $status_id = shift $option->{_}) {
+        my $t = eval { $nt->show_status({ id => $status_id }); };
+        unless ($@) {
+            $schema->find_or_create_status($t) unless $option->{no_store};
+            say sprintf "%s: %.19s: %s: %s", $t->{id}, $t->{created_at}, $t->{user}{screen_name}, $t->{text};
+        }
+        else {
+            say "status_id=$status_id: $@";
+            if (ref $@ and $@->isa('Net::Twitter::Lite::Error') and $@->code != 404) {
+                unshift $option->{_}, $status_id;
+
+                my $limit = grep {
+                    say sprintf "code=$_->{code}: $_->{message}";
+                    $_->{code} == 88;
+                } @{$@->twitter_error->{errors}};
+
+                if ($limit) {
+                    my $reset = $@->http_response->headers->{'x-rate-limit-reset'};
+                    while ((my $sleep = $reset-time) > 0) {
+                        print sprintf "sleep %d seconds\r", $sleep; sleep 1;
+                    }
+                }
+                else {
+                    my $wakeup = time+5;
+                    while ((my $sleep = $wakeup-time) > 0) {
+                        print sprintf "sleep %d seconds\r", $sleep; sleep 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
 1; # Magic true value required at end of module
 __END__
 
@@ -417,6 +495,8 @@ Uc::Model::Twitter::Crawler is the generater class of ucrawl-tweet command's ins
 =item L<Encode::Locale> >= 1.03
 
 =item L<File::HomeDir> >= 1.00
+
+=item L<Net::OAuth> >= 0.26
 
 =item L<Net::Twitter::Lite> >= 0.12006
 
