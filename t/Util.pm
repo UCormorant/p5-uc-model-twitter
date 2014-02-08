@@ -9,6 +9,7 @@ use File::Spec::Functions qw(catdir);
 use lib catdir(dirname(__FILE__), '..', 'lib');
 
 use autodie;
+use DBI;
 use JSON::PP qw();
 use Storable qw(dclone);
 
