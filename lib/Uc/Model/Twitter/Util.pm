@@ -62,7 +62,7 @@ my $CODEC = find_encoding('utf8');
 sub format_datetime {
     my $value = shift;
     $value = DateTime::Format::HTTP->parse_datetime($value =~ s/\+0000/GMT/r) if not ref $value;
-    croak "format_datetime requires a date text or a DateTime object"            if not ref $value eq 'DateTime';
+    croak "format_datetime requires a date text or a DateTime object"         if not ref $value eq 'DateTime';
     DateTime::Format::MySQL->format_datetime($value);
 }
 

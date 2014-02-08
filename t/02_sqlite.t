@@ -2,6 +2,7 @@ use t::Util;
 use Test::More;
 use Test::More::Hooks;
 use Test::Exception;
+use Scope::Guard qw(scope_guard);
 
 use Uc::Model::Twitter;
 Uc::Model::Twitter->load_plugin('Count');
@@ -9,25 +10,38 @@ Uc::Model::Twitter->load_plugin('Count');
 plan tests => 1;
 
 my $DB_HANDLE = eval {t::Util->setup_sqlite_dbh()};
-if ($@) { fail 'DBD::SQLite setup error'; }
+if ($@) { fail 'DBD::SQLite setup error'; return; }
 
 subtest "sqlite test" => sub {
     my $class;
     before { $class = Uc::Model::Twitter->new( dbh => $DB_HANDLE ); };
     after  { undef $class; };
 
-    plan tests => 2;
+    plan tests => 4;
+
+    subtest("\$class->can" => sub {
+        plan tests => 6;
+        isa_ok $class, 'Uc::Model::Twitter', '$class';
+
+        can_ok $class, $_ for qw(
+            create_table
+            drop_table
+            find_or_create_profile
+            find_or_create_status
+            update_or_create_remark
+        );
+    }) or return; # stop test unless all method can be called
 
     subtest "connect and setup database" => sub {
-        my $DB_DRIVER;
-        before { $DB_DRIVER = $DB_HANDLE->{Driver}{Name}; };
-        after  { $DB_HANDLE->{Driver}{Name} = $DB_DRIVER; };
-
         plan tests => 4;
-
         isa_ok $class, 'Uc::Model::Twitter', '$class';
 
         subtest "create and drop table (with unknown driver)" => sub {
+            my $DB_DRIVER = $DB_HANDLE->{Driver}{Name};
+            my $guard = scope_guard sub {
+                $DB_HANDLE->{Driver}{Name} = $DB_DRIVER;
+            };
+
             plan tests => 2;
             $DB_HANDLE->{Driver}{Name} = 'unknown';
             throws_ok { $class->create_table; } qr/'$DB_HANDLE->{Driver}{Name}'/,
@@ -36,7 +50,7 @@ subtest "sqlite test" => sub {
                 'drop_table() throw an error that includes driver name';
         };
 
-        subtest "create and drop tables" => sub {
+        subtest "create and drop table" => sub {
             plan tests => 2;
             my($sth, @got);
             my $table_name = 'uc_model_twitter';
@@ -125,12 +139,10 @@ subtest "sqlite test" => sub {
         before { $class->create_table; };
         after  { $class->drop_table; };
 
-        plan tests => 5;
+        plan tests => 7;
 
         subtest "find_or_create_profile" => sub {
-            plan tests => 7;
-
-            can_ok $class, 'find_or_create_profile';
+            plan tests => 6;
 
             # get tweet
             my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
@@ -161,10 +173,18 @@ subtest "sqlite test" => sub {
                 ];
         };
 
+        subtest "find_or_create_status (without user object)" => sub {
+            plan tests => 1;
+
+            # get tweet
+            my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
+            delete $status->{user};
+
+            dies_ok { $class->find_or_create_status($status); } 'expecting to die if user object is not defined';
+        };
+
         subtest "find_or_create_status" => sub {
             plan tests => 6;
-
-            can_ok $class, 'find_or_create_status';
 
             # get tweet
             my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
@@ -183,13 +203,19 @@ subtest "sqlite test" => sub {
             isa_ok $tweet3, 'Uc::Model::Twitter::Row::Status', 'retval of find a status by id';
 
             # cmp 3 results
-            ok !!($tweet1->id eq $tweet2->id and $tweet1->id eq $tweet3->id), 'searching with a same id retuerns same row';
+            ok(!!($tweet1->id eq $tweet2->id and $tweet1->id eq $tweet3->id), 'searching with a same id retuerns same row')
+                or diag explain [
+                    { n => 1, id => $tweet1->id },
+                    { n => 2, id => $tweet2->id },
+                    { n => 3, id => $tweet3->id },
+                ];
+
+            # check inflate
+            isa_ok $tweet1->created_at, 'DateTime', 'tweet->created_at';
         };
 
         subtest "find_or_create_status (with retweet)" => sub {
-            plan tests => 9;
-
-            can_ok $class, 'find_or_create_status';
+            plan tests => 8;
 
             # get tweet with retweet
             my $status = t::Util->open_json_file('t/status.include_retweet.json');
@@ -209,7 +235,12 @@ subtest "sqlite test" => sub {
             isa_ok $tweet2, 'Uc::Model::Twitter::Row::Status', 'retval of find a retweet by id';
 
             # cmp 3 results
-            ok !!($tweet1->id eq $tweet2->id and $tweet1->id eq $tweet3->id), 'searching with a same id retuerns same row';
+            ok(!!($tweet1->id eq $tweet2->id and $tweet1->id eq $tweet3->id), 'searching with a same id retuerns same row')
+                or diag explain [
+                    { n => 1, id => $tweet1->id },
+                    { n => 2, id => $tweet2->id },
+                    { n => 3, id => $tweet3->id },
+                ];
 
             # get original tweet
             my $tweet_orig = $class->single('status', { id => $tweet1->retweeted_status_id });
@@ -220,9 +251,7 @@ subtest "sqlite test" => sub {
         };
 
         subtest "update_or_create_remark" => sub {
-            plan tests => 8;
-
-            can_ok $class, 'update_or_create_remark';
+            plan tests => 7;
 
             # get tweet with retweet
             my $status = t::Util->open_json_file('t/status.include_retweet.json');
@@ -243,8 +272,11 @@ subtest "sqlite test" => sub {
             isa_ok $remark1, 'Uc::Model::Twitter::Row::Remark', 'retval of mark as retweeted status';
 
             ok $remark1->retweeted, 'target tweet is marked as retweeted status';
-            ok !!($remark1->id == $tweet->retweeted_status_id and $remark1->user_id == $tweet->user_id),
-                'check relation';
+            ok(!!($remark1->id == $tweet->retweeted_status_id and $remark1->user_id == $tweet->user_id),
+                'check relation') or diag explain [
+                    { remark_id => $remark1->id, retweeted_status_id => $tweet->retweeted_status_id },
+                    { remark_user_id => $remark1->user_id, tweet_user_id => $tweet->user_id },
+                ];
 
             # unmark as retweeted and mark as favorited
             $update{retweeted} = 0;
@@ -258,9 +290,7 @@ subtest "sqlite test" => sub {
         };
 
         subtest "update_or_create_remark (with retweet)" => sub {
-            plan tests => 12;
-
-            can_ok $class, 'update_or_create_remark';
+            plan tests => 11;
 
             # get tweet with retweet
             my $status = t::Util->open_json_file('t/status.include_retweet.json');
@@ -302,6 +332,107 @@ subtest "sqlite test" => sub {
             ok   $remark3->favorited, 'target is favorited';
             cmp_ok $remark3->retweeted, '==', $remark4->retweeted, 'original is unretweeted too';
             cmp_ok $remark3->favorited, '==', $remark4->favorited, 'original is favorited too';
+        };
+
+        subtest 'find_or_create_status (with options)' => sub {
+            plan tests => 9;
+
+            # get tweet
+            my $status = t::Util->open_json_file('t/status.remark.json');
+            my $attr = { user_id => $status->{user}{id}, ignore_unmarking => 0 };
+
+            # favorite, retweet
+            $status->{favorited} = 1;
+            $status->{retweeted} = 1;
+            my $tweet1 = $class->find_or_create_status($status, $attr);
+            my @remarks1 = $class->search('remark', { id => $tweet1->id, user_id => $attr->{user_id} });
+
+            is scalar @remarks1, 1, '1 remark';
+            ok   $remarks1[0]->favorited, 'target is favorited';
+            ok   $remarks1[0]->retweeted, 'target is retweeted';
+
+            # unfavorite
+            $status->{favorited} = 0;
+            $status->{retweeted} = 1;
+            my $tweet2 = $class->find_or_create_status($status, $attr);
+            my @remarks2 = $class->search('remark', { id => $tweet2->id, user_id => $attr->{user_id} });
+
+            is scalar @remarks2, 1, '1 remark';
+            ok ! $remarks2[0]->favorited, 'target is unfavorited';
+            ok   $remarks2[0]->retweeted, 'target is retweeted';
+
+            # ignore_unmarking
+            $status->{favorited} = 1;
+            $status->{retweeted} = 0;
+            $attr->{ignore_unmarking} = 1;
+            my $tweet3 = $class->find_or_create_status($status, $attr);
+            my @remarks3 = $class->search('remark', { id => $tweet3->id, user_id => $attr->{user_id} });
+
+            is scalar @remarks3, 1, '1 remark';
+            ok   $remarks3[0]->favorited, 'target is favorited';
+            ok   $remarks3[0]->retweeted, 'target is not unretweeted (ignore_unmarking)';
+        };
+    };
+
+    subtest 'table relationship' => sub {
+        my ($statuses, $attr);
+        before {
+            $statuses = t::Util->open_json_file('t/status.table_relationship.json');
+            $attr = { user_id => $statuses->[0]{user}{id} };
+            $class->create_table;
+            $class->find_or_create_status($_, $attr) for @$statuses;
+        };
+        after  { $class->drop_table; };
+
+        plan tests => 1;
+
+        subtest 'Row::*' => sub {
+            plan tests => 11;
+
+            # Row::Status
+            my $tweet1 = $class->single('status', { id => "240859602684612608" });
+            my $user1  = $tweet1->user; # belongs_to
+            is $user1->screen_name, "twitterapi1", 'expected profile';
+            my @remarks1 = $tweet1->remarks; # has_many
+            is scalar @remarks1, 1, '$tweet1 has 1 remark';
+            ok(!!(sprintf("%s", $remarks1[0]->user_id) eq "$attr->{user_id}" && $remarks1[0]->favorited && ! $remarks1[0]->retweeted),
+                'expected remark') or diag explain {
+                    user_id => $attr->{user_id},
+                    favorited_expect => 1, retweeted_expect => 0,
+                    remark_id => $remarks1[0]->id, remark_user_id => $remarks1[0]->user_id,
+                    favorited => $remarks1[0]->favorited, retweeted => $remarks1[0]->retweeted,
+                };
+
+            my $tweet2 = $class->single('status', { id => "239413543487819778" });
+            my $user2  = $tweet2->user; # belongs_to
+            is $user2->screen_name, "twitterapi2", 'another profile';
+            my @remarks2 = $tweet2->remarks; # has_many
+            is scalar @remarks2, 1, '$tweet2 has 1 remark';
+            ok(!!(sprintf("%s", $remarks2[0]->user_id) eq "$attr->{user_id}" && ! $remarks2[0]->favorited && $remarks2[0]->retweeted),
+                'another expected remark') or diag explain {
+                    user_id => $attr->{user_id},
+                    favorited_expect => 0, retweeted_expect => 1,
+                    remark_id => $remarks2[0]->id, remark_user_id => $remarks2[0]->user_id,
+                    favorited => $remarks2[0]->favorited, retweeted => $remarks2[0]->retweeted,
+                };
+
+            # Row::User
+            my @tweets1 = $user1->tweets; # has_many
+            is scalar @tweets1, 2, '$user1 has 2 tweets';
+
+            # Row::Remark
+            my $remark1 = $class->single('remark', { id => "240859602684612608", user_id => "$attr->{user_id}" });
+            my $remark2 = $class->single('remark', { id => "243014525132091393", user_id => "$attr->{user_id}" });
+
+            my $tweet3 = $remark1->tweet; # belongs_to
+            my $user3  = $remark1->user;  # belongs_to
+            is $tweet3->text, "Introducing the Twitter Certified Products Program: https://t.co/MjJ8xAnT", 'expected tweet (remark1)';
+            is $user3->name, "Twitter API", 'expected user (remark1)';
+
+            my $tweet4 = $remark2->tweet; # belongs_to
+            my $user4  = $remark2->user;  # belongs_to
+            is $tweet4->text, "Note to self:  don't die during off-peak hours on a holiday weekend.", 'expected tweet (remark2)';
+            is $user4->id, $user3->id, 'expected user (remark2)';
         };
     };
 };

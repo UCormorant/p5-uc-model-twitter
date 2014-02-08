@@ -112,12 +112,6 @@ sub tweets { # has_many
     $self->{teng}->search('status', { user_id => $self->id });
 }
 
-sub remarks { # has_many
-    my $self = shift;
-    $self->{teng}->search('remark', { user_id => $self->id });
-}
-
-
 package Uc::Model::Twitter::Row::Remark;
 use parent 'Teng::Row';
 

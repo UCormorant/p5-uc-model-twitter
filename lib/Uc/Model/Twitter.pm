@@ -25,7 +25,7 @@ sub find_or_create_status {
     $attr->{user_id}          = '' if not exists $attr->{user_id};
     $attr->{ignore_unmarking} = '' if not exists $attr->{ignore_unmarking};
 
-    croak "tweet must include user->{id} and user->{profile_id}" if not defined $user;
+    croak "each tweet must contain tweet's user object" if not defined $user;
 
     my %columns;
     for my $col (@{$table->columns}) {
@@ -45,7 +45,8 @@ sub find_or_create_status {
             id => $tweet->{id},
             user_id => $attr->{user_id},
         );
-        my $sql_types = $table->sql_types;
+        my $table_remark = $self->schema->get_table('remark');
+        my $sql_types = $table_remark->sql_types;
         my @boolean_cols;
         for my $col (keys $sql_types) {
             if (exists $tweet->{$col} && $sql_types->{$col} == SQL_BOOLEAN) {
