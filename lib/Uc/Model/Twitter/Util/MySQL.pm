@@ -30,7 +30,8 @@ CREATE TABLE `status` (
   `friends_count`           int unsigned    DEFAULT NULL,
   `followers_count`         int unsigned    DEFAULT NULL,
   `listed_count`            int unsigned    DEFAULT NULL,
-  PRIMARY KEY (`id`,`created_at`)
+  PRIMARY KEY (`id`,`created_at`),
+  KEY `user_id_index` (`user_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 /*!50500 PARTITION BY RANGE  COLUMNS(created_at)
 (PARTITION p2007_1 VALUES LESS THAN ('2007-04-01') ENGINE = InnoDB,
@@ -61,6 +62,10 @@ CREATE TABLE `status` (
  PARTITION p2013_2 VALUES LESS THAN ('2013-07-01') ENGINE = InnoDB,
  PARTITION p2013_3 VALUES LESS THAN ('2013-10-01') ENGINE = InnoDB,
  PARTITION p2013_4 VALUES LESS THAN ('2014-01-01') ENGINE = InnoDB,
+ PARTITION p2014_1 VALUES LESS THAN ('2014-04-01') ENGINE = InnoDB,
+ PARTITION p2014_2 VALUES LESS THAN ('2014-07-01') ENGINE = InnoDB,
+ PARTITION p2014_3 VALUES LESS THAN ('2014-10-01') ENGINE = InnoDB,
+ PARTITION p2014_4 VALUES LESS THAN ('2015-01-01') ENGINE = InnoDB,
  PARTITION platest VALUES LESS THAN (MAXVALUE) ENGINE = InnoDB) */
     },
     user          => q{
@@ -98,10 +103,11 @@ CREATE TABLE `user` (
     },
     remark        => q{
 CREATE TABLE `remark` (
-  `id`        bigint unsigned NOT NULL,
-  `user_id`   bigint unsigned NOT NULL,
-  `favorited` boolean         NOT NULL DEFAULT '0',
-  `retweeted` boolean         NOT NULL DEFAULT '0',
+  `id`             bigint unsigned NOT NULL,
+  `user_id`        bigint unsigned NOT NULL,
+  `status_user_id` bigint unsigned NOT NULL,
+  `favorited`      boolean         NOT NULL DEFAULT '0',
+  `retweeted`      boolean         NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     },
@@ -133,7 +139,7 @@ sub create_table_mysql {
     }
 
     for my $table (keys %sql) {
-        $class->execute($sql{$table});
+        $class->execute($_) for split ";", $sql{$table};
     }
 }
 

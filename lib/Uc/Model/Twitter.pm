@@ -1,4 +1,4 @@
-package Uc::Model::Twitter v1.1.2;
+package Uc::Model::Twitter v1.2.0;
 
 use 5.014;
 use warnings;
@@ -39,11 +39,11 @@ sub find_or_create_status {
 
         $self->find_or_create_status($tweet->{retweeted_status}, $attr) if ref $tweet->{retweeted_status}{user};
     }
-
-    if ($attr->{user_id} ne '') {
+    elsif ($attr->{user_id} ne '') {
         my %update = (
             id => $tweet->{id},
             user_id => $attr->{user_id},
+            status_user_id => $tweet->{user}{id},
         );
         my $table_remark = $self->schema->get_table('remark');
         my $sql_types = $table_remark->sql_types;
@@ -103,7 +103,8 @@ sub update_or_create_remark {
     my $table = $self->schema->get_table('remark');
 
     $attr = {} unless $attr;
-    $attr->{retweeted_status} = '' if not exists $attr->{retweeted_status};
+    $attr->{retweeted_status_id}      = '' if not exists $attr->{retweeted_status_id};
+    $attr->{retweeted_status_user_id} = '' if not exists $attr->{retweeted_status_user_id};
 
     croak "first argument must be included id and user_id" if !$update->{id} or !$update->{user_id};
 
@@ -119,8 +120,9 @@ sub update_or_create_remark {
     }
 
     my $retweeted_status_id = undef;
-    if (ref $attr->{retweeted_status}) {
-        $retweeted_status_id = $attr->{retweeted_status}{id};
+    my $retweeted_status_user_id = undef;
+    if ($attr->{retweeted_status_id} ne '') {
+        $retweeted_status_id = $attr->{retweeted_status_id};
     }
     else {
         my $tweet = $self->single('status', { id => $columns{id} });
@@ -128,9 +130,19 @@ sub update_or_create_remark {
             $retweeted_status_id = $tweet->retweeted_status_id;
         }
     }
-    if (defined $retweeted_status_id) {
+
+    if ($attr->{retweeted_status_user_id} ne '') {
+        $retweeted_status_user_id = $attr->{retweeted_status_user_id};
+    }
+    elsif (defined $retweeted_status_id) {
+        my $tweet = $self->single('status', { id => $retweeted_status_id });
+        $retweeted_status_user_id = $tweet->user_id if $tweet;
+    }
+
+    if (defined $retweeted_status_id and defined $retweeted_status_user_id) {
         my %retweet_update = %columns;
         $retweet_update{id} = numify($retweeted_status_id);
+        $retweet_update{status_user_id} = numify($retweeted_status_user_id);
         $self->update_or_create('remark', \%retweet_update);
     }
 

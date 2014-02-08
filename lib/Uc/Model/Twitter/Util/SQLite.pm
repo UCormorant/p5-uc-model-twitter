@@ -31,7 +31,8 @@ CREATE TABLE 'status' (
   'followers_count'         int         DEFAULT NULL,
   'listed_count'            int         DEFAULT NULL,
   PRIMARY KEY ('id','created_at')
-)
+);
+CREATE INDEX 'user_id_index' ON 'status' ('user_id','created_at')
     },
     user          => q{
 CREATE TABLE 'user' (
@@ -68,10 +69,11 @@ CREATE TABLE 'user' (
     },
     remark        => q{
 CREATE TABLE 'remark' (
-  'id'        bigint  NOT NULL,
-  'user_id'   bigint  NOT NULL,
-  'favorited' boolean NOT NULL DEFAULT 0,
-  'retweeted' boolean NOT NULL DEFAULT 0,
+  'id'             bigint  NOT NULL,
+  'user_id'        bigint  NOT NULL,
+  'status_user_id' bigint  NOT NULL,
+  'favorited'      boolean NOT NULL DEFAULT 0,
+  'retweeted'      boolean NOT NULL DEFAULT 0,
   PRIMARY KEY ('id','user_id')
 )
     },
@@ -107,7 +109,9 @@ sub create_table_sqlite {
         drop_table_sqlite($class);
     }
 
-    $class->execute($sql{$_}) for keys %sql;
+    for my $table (keys %sql) {
+        $class->execute($_) for split ";", $sql{$table};
+    }
 }
 
 sub drop_table_sqlite {

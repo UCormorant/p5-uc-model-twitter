@@ -246,6 +246,7 @@ subtest "mysql test" => sub {
             my %update = (
                 id => $tweet->retweeted_status_id,
                 user_id => $tweet->user_id,
+                status_user_id => $tweet->user_id,
             );
 
             # mark as retweeted status
@@ -285,12 +286,16 @@ subtest "mysql test" => sub {
             my %update = (
                 id => $tweet->id,
                 user_id => $tweet->user_id,
+                status_user_id => $tweet->user_id,
             );
             $update{retweeted} = 1;
 
             my $remark1 = $class->update_or_create_remark(
                 \%update,
-                { retweeted_status => $status->{retweeted_status} }
+                {
+                    retweeted_status_id => $status->{retweeted_status}{id},
+                    retweeted_status_user_id => $status->{retweeted_status}{user}{id},
+                }
             );
             isa_ok $remark1, 'Uc::Model::Twitter::Row::Remark', 'retval retweet \'RT status\'';
 
@@ -358,25 +363,29 @@ subtest "mysql test" => sub {
     };
 
     subtest 'table relationship' => sub {
-        my ($statuses, $attr);
-        before {
-            $statuses = t::Util->open_json_file('t/status.table_relationship.json');
-            $attr = { user_id => $statuses->[0]{user}{id} };
-            $class->create_table;
-            $class->find_or_create_status($_, $attr) for @$statuses;
-        };
-        after  { $class->drop_table; };
+        my $statuses = t::Util->open_json_file('t/status.table_relationship.json');
+        my $attr = { user_id => $statuses->[0]{user}{id} };
+        my $guard = scope_guard sub { $class->drop_table };
 
-        plan tests => 1;
+        $class->create_table;
+        $class->find_or_create_status($_, $attr) for @$statuses;
 
-        subtest 'Row::*' => sub {
-            plan tests => 11;
+        plan tests => 3;
+
+        subtest 'Row::Status' => sub {
+            plan tests => 10;
 
             # Row::Status
             my $tweet1 = $class->single('status', { id => "240859602684612608" });
+
+            # -> Row::User
             my $user1  = $tweet1->user; # belongs_to
             is $user1->screen_name, "twitterapi1", 'expected profile';
-            my @remarks1 = $tweet1->remarks; # has_many
+
+            # -> Row::Remark
+            is scalar @{[$tweet1->favorited]}, 1, '$tweet1 has 1 favorited'; # has_many
+            is scalar @{[$tweet1->retweeted]}, 0, '$tweet1 has no retweeted'; # has_many
+            my @remarks1 = $tweet1->remarked; # has_many
             is scalar @remarks1, 1, '$tweet1 has 1 remark';
             ok(!!(sprintf("%s", $remarks1[0]->user_id) eq "$attr->{user_id}" && $remarks1[0]->favorited && ! $remarks1[0]->retweeted),
                 'expected remark') or diag explain {
@@ -386,10 +395,17 @@ subtest "mysql test" => sub {
                     favorited => $remarks1[0]->favorited, retweeted => $remarks1[0]->retweeted,
                 };
 
+            # other Row::Status
             my $tweet2 = $class->single('status', { id => "239413543487819778" });
+
+            # -> Row::User
             my $user2  = $tweet2->user; # belongs_to
             is $user2->screen_name, "twitterapi2", 'another profile';
-            my @remarks2 = $tweet2->remarks; # has_many
+
+            # -> Row::Remark
+            is scalar @{[$tweet2->favorited]}, 0, '$tweet2 has no favorited'; # has_many
+            is scalar @{[$tweet2->retweeted]}, 1, '$tweet2 has 1 retweeted'; # has_many
+            my @remarks2 = $tweet2->remarked; # has_many
             is scalar @remarks2, 1, '$tweet2 has 1 remark';
             ok(!!(sprintf("%s", $remarks2[0]->user_id) eq "$attr->{user_id}" && ! $remarks2[0]->favorited && $remarks2[0]->retweeted),
                 'another expected remark') or diag explain {
@@ -399,23 +415,54 @@ subtest "mysql test" => sub {
                     favorited => $remarks2[0]->favorited, retweeted => $remarks2[0]->retweeted,
                 };
 
+        };
+
+        subtest 'Row::User' => sub {
+            plan tests => 7;
+
             # Row::User
-            my @tweets1 = $user1->tweets; # has_many
+            my $user = $class->single('user', { id => "6253282" });
+
+            # -> Row::Status
+            my @tweets1 = $user->tweets; # has_many
             is scalar @tweets1, 2, '$user1 has 2 tweets';
+
+            # -> Row::Remark
+            is scalar @{[$user->favorites]}, 2, '$user favorites 2 times'; # has_many
+            is scalar @{[$user->retweets]},  2, '$user retweets 2 times'; # has_many
+            is scalar @{[$user->remarks]},   3, '$user gives 3 remarks'; # has_many
+
+            is scalar @{[$user->favorited]}, 1, '$user is favorited 1 time'; # has_many
+            is scalar @{[$user->retweeted]}, 1, '$user is retweeted 1 time'; # has_many
+            is scalar @{[$user->remarked]},  2, '$user takes 2 remarks'; # has_many
+        };
+
+        subtest 'Row::Remark' => sub {
+            plan tests => 6;
 
             # Row::Remark
             my $remark1 = $class->single('remark', { id => "240859602684612608", user_id => "$attr->{user_id}" });
+
+            # -> Row::Status
+            # -> Row::User
+            my $tweet1       = $remark1->tweet; # belongs_to
+            my $user1        = $remark1->user;  # belongs_to
+            my $status_user1 = $remark1->status_user;  # belongs_to
+            is $tweet1->text, "Introducing the Twitter Certified Products Program: https://t.co/MjJ8xAnT", 'expected tweet (remark1)';
+            is $user1->name, "Twitter API", 'expected user (remark1)';
+            is $status_user1->name, "Twitter API", 'expected status_user (remark1)';
+
+            # other Row::Remark
             my $remark2 = $class->single('remark', { id => "243014525132091393", user_id => "$attr->{user_id}" });
 
-            my $tweet3 = $remark1->tweet; # belongs_to
-            my $user3  = $remark1->user;  # belongs_to
-            is $tweet3->text, "Introducing the Twitter Certified Products Program: https://t.co/MjJ8xAnT", 'expected tweet (remark1)';
-            is $user3->name, "Twitter API", 'expected user (remark1)';
-
-            my $tweet4 = $remark2->tweet; # belongs_to
-            my $user4  = $remark2->user;  # belongs_to
-            is $tweet4->text, "Note to self:  don't die during off-peak hours on a holiday weekend.", 'expected tweet (remark2)';
-            is $user4->id, $user3->id, 'expected user (remark2)';
+            # -> Row::Status
+            # -> Row::User
+            my $tweet2       = $remark2->tweet; # belongs_to
+            my $user2        = $remark2->user;  # belongs_to
+            my $status_user2 = $remark2->status_user;  # belongs_to
+            is $tweet2->text, "Note to self:  don't die during off-peak hours on a holiday weekend.", 'expected tweet (remark2)';
+            is $user2->name, "Twitter API", 'expected user (remark1)';
+            is $status_user2->name, "Sean Cook", 'expected status_user (remark1)';
         };
     };
 };

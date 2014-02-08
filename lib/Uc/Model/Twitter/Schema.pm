@@ -73,10 +73,11 @@ table {
     name "remark";
     pk qw( id user_id );
     columns (
-        { name => "id",        type => SQL_BIGINT  },
-        { name => "user_id",   type => SQL_BIGINT  },
-        { name => "favorited", type => SQL_BOOLEAN },
-        { name => "retweeted", type => SQL_BOOLEAN },
+        { name => "id",             type => SQL_BIGINT  },
+        { name => "user_id",        type => SQL_BIGINT  },
+        { name => "status_user_id", type => SQL_BIGINT  },
+        { name => "favorited",      type => SQL_BOOLEAN },
+        { name => "retweeted",      type => SQL_BOOLEAN },
     );
 };
 
@@ -98,11 +99,18 @@ sub user { # belongs_to
     $self->{_prv_umt_profile} //= $self->{teng}->single('user', { id => $self->user_id, profile_id => $self->profile_id });
 }
 
-sub remarks { # has_many
+sub remarked { # has_many
     my $self = shift;
-    $self->{teng}->search('remark', { id => $self->id });
+    $self->{teng}->search('remark', { id => $self->id, @_ });
 }
 
+sub favorited { # has_many
+    shift->remarked( favorited => 1 );
+}
+
+sub retweeted { # has_many
+    shift->remarked( retweeted => 1 );
+}
 
 package Uc::Model::Twitter::Row::User;
 use parent 'Teng::Row';
@@ -110,6 +118,32 @@ use parent 'Teng::Row';
 sub tweets { # has_many
     my $self = shift;
     $self->{teng}->search('status', { user_id => $self->id });
+}
+
+sub remarks { # has_many
+    my $self = shift;
+    $self->{teng}->search('remark', { user_id => $self->id, @_ });
+}
+
+sub favorites { # has_many
+    shift->remarks( favorited => 1 );
+}
+
+sub retweets { # has_many
+    shift->remarks( retweeted => 1 );
+}
+
+sub remarked { # has_many
+    my $self = shift;
+    $self->{teng}->search('remark', { status_user_id => $self->id, @_ });
+}
+
+sub favorited { # has_many
+    shift->remarked( favorited => 1 );
+}
+
+sub retweeted { # has_many
+    shift->remarked( retweeted => 1 );
 }
 
 package Uc::Model::Twitter::Row::Remark;
@@ -123,6 +157,11 @@ sub tweet { # belongs_to
 sub user { # belongs_to
     my $self = shift;
     $self->{_prv_umt_profile} //= $self->{teng}->single('user', { id => $self->user_id });
+}
+
+sub status_user { # belongs_to
+    my $self = shift;
+    $self->{_prv_umt_status_profile} //= $self->{teng}->single('user', { id => $self->status_user_id });
 }
 
 
