@@ -2,6 +2,22 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.2.0 2014-02-08T12:44:53Z
+
+    - bugfix: unexpectedly, find_or_create_status remarks RT
+              if RT's original tweet is already favorited/reteeted
+
+    - updated schema: SQL files for migration are in ./migrate
+        - status: added index (user_id, created_at)
+                  and year 2014 partitions
+        - remark: added column status_user_id
+
+    - added relationship methods:
+        - Row::Status: remarked, favorited, retweeted
+        - Row::User: remarks, favorites, retweets,
+                     remarked, favorited, retweeted
+        - Row::Remark: status_user
+
 v1.1.2 2014-02-08T02:45:14Z
 
     - bug fix: find_or_create_status with $attr->{user_id} doesn't work
