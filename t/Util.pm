@@ -4,13 +4,14 @@ use 5.014;
 use warnings;
 use utf8;
 
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catdir catfile);
 use lib catdir(dirname(__FILE__), '..', 'lib');
 
 use autodie;
 use DBI;
 use JSON::PP qw();
+use File::Temp qw(tempdir);
 use Storable qw(dclone);
 
 my $MYSQLD;
@@ -65,7 +66,34 @@ sub setup_sqlite_dbh {
 
 sub open_json_file {
     shift;
-    $JSON->decode(do { local $/; open my $fh, '<:utf8', shift; $fh->getline; });
+    my ($file, $abs) = @_;
+    $file = catfile(dirname(__FILE__), $file) if not $abs;
+    $JSON->decode(do { local $/; open my $fh, '<:utf8', $file; $fh->getline; });
+}
+
+sub slurp {
+    shift;
+    my ($file, $abs) = @_;
+    $file = catfile(dirname(__FILE__), $file) if not $abs;
+    local $/;
+    open my($fh), '<:encoding(utf8)', $file;
+    my $line = <$fh>;
+    close $fh;
+    $line;
+}
+
+sub store {
+    shift;
+    my ($file, $data, $abs) = @_;
+    $file = catfile(dirname(__FILE__), $file) if not $abs;
+    open my($fh), '>:encoding(utf8)', $file;
+    print $fh $data;
+    close $fh;
+}
+
+sub tempfolder {
+    shift;
+    tempdir(CLEANUP => 1);
 }
 
 1;

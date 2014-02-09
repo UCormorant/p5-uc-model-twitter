@@ -94,7 +94,7 @@ subtest "mysql test" => sub {
             $class->create_table(if_not_exists => 0);
 
             # insert rows into 'status'
-            my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
+            my $status = t::Util->open_json_file('status.exclude_retweet.json');
             my $tweet = $class->find_or_create_status($status);
 
             # drop table 'user'
@@ -131,7 +131,7 @@ subtest "mysql test" => sub {
             plan tests => 6;
 
             # get tweet
-            my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
+            my $status = t::Util->open_json_file('status.exclude_retweet.json');
 
             # create
             my $user1 = $class->find_or_create_profile($status->{user});
@@ -163,7 +163,7 @@ subtest "mysql test" => sub {
             plan tests => 1;
 
             # get tweet
-            my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
+            my $status = t::Util->open_json_file('status.exclude_retweet.json');
             delete $status->{user};
 
             dies_ok { $class->find_or_create_status($status); } 'expecting to die if user object is not defined';
@@ -173,7 +173,7 @@ subtest "mysql test" => sub {
             plan tests => 5;
 
             # get tweet
-            my $status = t::Util->open_json_file('t/status.exclude_retweet.json');
+            my $status = t::Util->open_json_file('status.exclude_retweet.json');
 
             # create
             my $tweet1 = $class->find_or_create_status($status);
@@ -201,7 +201,7 @@ subtest "mysql test" => sub {
             plan tests => 8;
 
             # get tweet with retweet
-            my $status = t::Util->open_json_file('t/status.include_retweet.json');
+            my $status = t::Util->open_json_file('status.include_retweet.json');
 
             # create
             my $tweet1 = $class->find_or_create_status($status);
@@ -237,7 +237,7 @@ subtest "mysql test" => sub {
             plan tests => 7;
 
             # get tweet with retweet
-            my $status = t::Util->open_json_file('t/status.include_retweet.json');
+            my $status = t::Util->open_json_file('status.include_retweet.json');
 
             my $tweet = $class->find_or_create_status($status);
             isa_ok $tweet, 'Uc::Model::Twitter::Row::Status', 'retval of create a status with retweet';
@@ -277,7 +277,7 @@ subtest "mysql test" => sub {
             plan tests => 11;
 
             # get tweet with retweet
-            my $status = t::Util->open_json_file('t/status.include_retweet.json');
+            my $status = t::Util->open_json_file('status.include_retweet.json');
 
             my $tweet = $class->find_or_create_status($status);
             isa_ok $tweet, 'Uc::Model::Twitter::Row::Status', 'retval of create a status with retweet';
@@ -326,7 +326,7 @@ subtest "mysql test" => sub {
             plan tests => 9;
 
             # get tweet
-            my $status = t::Util->open_json_file('t/status.remark.json');
+            my $status = t::Util->open_json_file('status.remark.json');
             my $attr = { user_id => $status->{user}{id}, ignore_unmarking => 0 };
 
             # favorite, retweet
@@ -363,7 +363,7 @@ subtest "mysql test" => sub {
     };
 
     subtest 'table relationship' => sub {
-        my $statuses = t::Util->open_json_file('t/status.table_relationship.json');
+        my $statuses = t::Util->open_json_file('status.table_relationship.json');
         my $attr = { user_id => $statuses->[0]{user}{id} };
         my $guard = scope_guard sub { $class->drop_table };
 

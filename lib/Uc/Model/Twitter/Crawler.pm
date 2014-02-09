@@ -176,7 +176,7 @@ sub setup_dbh_mysql {
 
 sub call_api {
     my ($option, $arg) = @_;
-    while (($option->{all} or $option->{page}--) && _api($option, $arg)) {
+    while (($option->{all} or $option->{page}-- > 0) && _api($option, $arg)) {
         say sprintf "rest of page: %s (max_id: %s)", ($option->{all} ? 'all' : $option->{page}), $arg->{option}{max_id};
     }
 }
@@ -207,15 +207,20 @@ sub _api {
         my $name = $api_arg->{screen_name} // "user_id=$api_arg->{user_id}";
         say "$name: $@";
         if (ref $@ and $@->isa('Net::Twitter::Lite::Error')) {
-            my $limit = grep {
+            my $limit = 0;
+            my $not_found = 0;
+            map {
                 say sprintf "code=$_->{code}: $_->{message}";
-                $_->{code} == 88;
+                $limit     = 1 if $_->{code} == 88;
+                $not_found = 1 if $_->{code} == 34;
             } @{$@->twitter_error->{errors}};
 
             if ($limit) {
-                say sprintf "rate limit resets after %d seconds",
-                    $@->http_response->headers->{'x-rate-limit-reset'}-time;
+                my $header = $@->http_response->headers;
+                my $reset_time = defined $header->{'x-rate-limit-reset'} ? $header->{'x-rate-limit-reset'} : 0;
+                say sprintf "rate limit resets after %d seconds", $reset_time-time;
             }
+            elsif ($not_found) { $option->{page} = 0; }
         }
     }
 
@@ -411,7 +416,9 @@ sub crawl {
     $api_arg->{option}{max_id}   = $option->{max_id}   if exists $option->{max_id};
 
     if (scalar @{$option->{_}}) {
+        my $page = $option->{page};
         for my $screen_name (@{$option->{_}}) {
+            $option->{page} = $page;
             $api_arg->{option}{screen_name} = $screen_name;
             call_api($option, $api_arg);
         }
@@ -452,13 +459,15 @@ sub status {
             if (ref $@ and $@->isa('Net::Twitter::Lite::Error') and $@->code != 404) {
                 unshift $option->{_}, $status_id;
 
-                my $limit = grep {
+                my $limit = 0;
+                map {
                     say sprintf "code=$_->{code}: $_->{message}";
-                    $_->{code} == 88;
+                    $limit     = 1 if $_->{code} == 88;
                 } @{$@->twitter_error->{errors}};
 
                 if ($limit) {
-                    my $reset = $@->http_response->headers->{'x-rate-limit-reset'};
+                    my $header = $@->http_response->headers;
+                    my $reset = defined $header->{'x-rate-limit-reset'} ? $header->{'x-rate-limit-reset'} : 0;
                     while ((my $sleep = $reset-time) > 0) {
                         print sprintf "sleep %d seconds\r", $sleep; sleep 1;
                     }
