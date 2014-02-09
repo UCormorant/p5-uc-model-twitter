@@ -184,6 +184,7 @@ sub _api {
     my $nt      = $arg->{agent};
     my $schema  = $arg->{schema};
     my $method  = $arg->{method};
+    my $config  = $arg->{config};
     my $api_arg = $arg->{option};
     my $count   = 0;
 
@@ -191,7 +192,7 @@ sub _api {
     unless ($@) {
         my $txn = $schema->txn_scope;
         for my $t (@$tweets) {
-            $schema->find_or_create_status($t) unless $option->{no_store};
+            $schema->find_or_create_status($t, { user_id => $config->{user_id} }) unless $option->{no_store};
 
             $api_arg->{max_id} = sprintf "%s", Math::BigInt->new($t->{id})-1;
             say sprintf "%.19s: %s: %s", $t->{created_at}, $t->{user}{screen_name}, $t->{text};
@@ -397,9 +398,10 @@ sub crawl {
     my $schema = Uc::Model::Twitter->new( dbh => setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}) );
 
     my $api_arg = {
-        agent => $nt,
+        agent  => $nt,
         schema => $schema,
         method => $method,
+        config => $config,
         option => { count => $option->{count} },
     };
     $api_arg->{option}{since_id} = $option->{since_id} if exists $option->{since_id};
@@ -439,7 +441,7 @@ sub status {
     while (my $status_id = shift $option->{_}) {
         my $t = eval { $nt->show_status({ id => $status_id }); };
         unless ($@) {
-            $schema->find_or_create_status($t) unless $option->{no_store};
+            $schema->find_or_create_status($t, { user_id => $config->{user_id} }) unless $option->{no_store};
             say sprintf "%s: %.19s: %s: %s", $t->{id}, $t->{created_at}, $t->{user}{screen_name}, $t->{text};
         }
         else {
