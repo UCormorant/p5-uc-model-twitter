@@ -2,6 +2,24 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.2.1 2014-02-09T16:56:18Z
+
+    - updated ucrawler-tweet:
+        - added -v option, 'status' sub command
+          and twitter_error messages.
+
+    - fixed bugs in ucrawl-tweet:
+        - if -t STDIN is true, configure_encoding doesn't work
+          even through -t STDOUT is true.
+        - ucrawl-tweet had never called
+          the method "update_or_create_remark"
+        - infinite looped when the api is not found
+        - subtracted from uninitialized value
+
+    - added test for ucrawl-tweet commands:
+        - run with no command
+        - user, fav, mention and status command
+
 v1.2.0 2014-02-08T12:44:53Z
 
     - bugfix: unexpectedly, find_or_create_status remarks RT

@@ -1,4 +1,4 @@
-package Uc::Model::Twitter v1.2.0;
+package Uc::Model::Twitter v1.2.1;
 
 use 5.014;
 use warnings;
