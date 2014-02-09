@@ -41,14 +41,14 @@ sub setup_dbh {
 
 sub setup_dbh_sqlite {
     my $file = shift || ':memory:';
-    DBI->connect('dbi:SQLite:'.$file,'','',{RaiseError => 1, PrintError => 0, AutoCommit => 1, sqlite_unicode => 1});
+    DBI->connect('dbi:SQLite:'.$file,'','',+{RaiseError => 1, PrintError => 0, AutoCommit => 1, sqlite_unicode => 1});
 }
 
 sub setup_dbh_mysql {
     my $db = shift || 'test';
     my $user = shift;
     my $pass = shift;
-    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,+{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
     $dbh->do('SET NAMES utf8mb4');
     $dbh;
 }

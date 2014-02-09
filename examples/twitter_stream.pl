@@ -45,7 +45,7 @@ END { logging(); }
 my $db_user = '';
 my $db_pass = '';
 if ($driver eq 'mysql' && $database) {
-    my $mysql_conf = pit_get($driver, require => {
+    my $mysql_conf = pit_get($driver, require => +{
         user => 'mysql database user',
         pass => 'mysql user password',
     });

@@ -300,7 +300,7 @@ subtest "mysql test" => sub {
             isa_ok $remark1, 'Uc::Model::Twitter::Row::Remark', 'retval retweet \'RT status\'';
 
             # find original tweet's mark
-            my $remark2 = $class->single('remark', { id => $tweet->retweeted_status_id });
+            my $remark2 = $class->single('remark', +{ id => $tweet->retweeted_status_id });
             isa_ok $remark2, 'Uc::Model::Twitter::Row::Remark', 'retval of find RT status\'s mark';
 
             ok $remark1->retweeted, 'target is retweeted';
@@ -313,7 +313,7 @@ subtest "mysql test" => sub {
             my $remark3 = $class->update_or_create_remark(\%update);
             isa_ok $remark3, 'Uc::Model::Twitter::Row::Remark', 'retval of update RT status\'s mark';
 
-            my $remark4 = $class->single('remark', { id => $tweet->retweeted_status_id });
+            my $remark4 = $class->single('remark', +{ id => $tweet->retweeted_status_id });
             isa_ok $remark4, 'Uc::Model::Twitter::Row::Remark', 'retval of get original tweet\'s mark';
 
             ok ! $remark3->retweeted, 'target is unretweeted';
@@ -333,7 +333,7 @@ subtest "mysql test" => sub {
             $status->{favorited} = 1;
             $status->{retweeted} = 1;
             my $tweet1 = $class->find_or_create_status($status, $attr);
-            my @remarks1 = $class->search('remark', { id => $tweet1->id, user_id => $attr->{user_id} });
+            my @remarks1 = $class->search('remark', +{ id => $tweet1->id, user_id => $attr->{user_id} });
 
             is scalar @remarks1, 1, '1 remark';
             ok   $remarks1[0]->favorited, 'target is favorited';
@@ -343,7 +343,7 @@ subtest "mysql test" => sub {
             $status->{favorited} = 0;
             $status->{retweeted} = 1;
             my $tweet2 = $class->find_or_create_status($status, $attr);
-            my @remarks2 = $class->search('remark', { id => $tweet2->id, user_id => $attr->{user_id} });
+            my @remarks2 = $class->search('remark', +{ id => $tweet2->id, user_id => $attr->{user_id} });
 
             is scalar @remarks2, 1, '1 remark';
             ok ! $remarks2[0]->favorited, 'target is unfavorited';
@@ -354,7 +354,7 @@ subtest "mysql test" => sub {
             $status->{retweeted} = 0;
             $attr->{ignore_unmarking} = 1;
             my $tweet3 = $class->find_or_create_status($status, $attr);
-            my @remarks3 = $class->search('remark', { id => $tweet3->id, user_id => $attr->{user_id} });
+            my @remarks3 = $class->search('remark', +{ id => $tweet3->id, user_id => $attr->{user_id} });
 
             is scalar @remarks3, 1, '1 remark';
             ok   $remarks3[0]->favorited, 'target is favorited';
@@ -396,7 +396,7 @@ subtest "mysql test" => sub {
                 };
 
             # other Row::Status
-            my $tweet2 = $class->single('status', { id => "239413543487819778" });
+            my $tweet2 = $class->single('status', +{ id => "239413543487819778" });
 
             # -> Row::User
             my $user2  = $tweet2->user; # belongs_to
@@ -421,7 +421,7 @@ subtest "mysql test" => sub {
             plan tests => 7;
 
             # Row::User
-            my $user = $class->single('user', { id => "6253282" });
+            my $user = $class->single('user', +{ id => "6253282" });
 
             # -> Row::Status
             my @tweets1 = $user->tweets; # has_many
@@ -441,7 +441,7 @@ subtest "mysql test" => sub {
             plan tests => 6;
 
             # Row::Remark
-            my $remark1 = $class->single('remark', { id => "240859602684612608", user_id => "$attr->{user_id}" });
+            my $remark1 = $class->single('remark', +{ id => "240859602684612608", user_id => "$attr->{user_id}" });
 
             # -> Row::Status
             # -> Row::User
@@ -453,7 +453,7 @@ subtest "mysql test" => sub {
             is $status_user1->name, "Twitter API", 'expected status_user (remark1)';
 
             # other Row::Remark
-            my $remark2 = $class->single('remark', { id => "243014525132091393", user_id => "$attr->{user_id}" });
+            my $remark2 = $class->single('remark', +{ id => "243014525132091393", user_id => "$attr->{user_id}" });
 
             # -> Row::Status
             # -> Row::User

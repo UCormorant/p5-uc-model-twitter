@@ -3,7 +3,7 @@ use Net::Twitter::Lite::WithAPIv1_1;
 
 sub twitter_agent {
     my ($conf_app, $conf_user) = @_;
-    my $nt = Net::Twitter::Lite::WithAPIv1_1->new(%$conf_app, useragent_args => { timeout => 10 }, ssl => 1);
+    my $nt = Net::Twitter::Lite::WithAPIv1_1->new(%$conf_app, useragent_args => +{ timeout => 10 }, ssl => 1);
     $nt->access_token($conf_user->{token});
     $nt->access_token_secret($conf_user->{token_secret});
 

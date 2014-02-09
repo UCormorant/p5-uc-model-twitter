@@ -2,11 +2,24 @@ use t::Util;
 use Test::More;
 use Test::More::Hooks;
 use Test::Exception;
+use Test::Mock::Guard;
 use Scope::Guard qw(scope_guard);
 use Capture::Tiny qw(capture_merged);
 use File::Basename qw(basename);
 
 use Uc::Model::Twitter::Crawler;
+
+sub local_term (&@) {
+    my $block = shift;
+    local *STDIN;
+    local *STDOUT;
+    local *STDERR;
+    local(@ARGV) = @_;
+    capture_merged {
+        Uc::Model::Twitter::Crawler->new( configure_encoding => 1 );
+        $block->(@ARGV);
+    };
+}
 
 plan tests => 1;
 
@@ -42,20 +55,19 @@ subtest 'ucrawl-tweet' => sub {
         subtest 'no commnad' => sub {
             plan tests => 4;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             like $output, qr/^Usage: $script_file/, 'show help';
             like $output, qr/--version/, 'help text says about -v option';
 
-            @ARGV = qw(-v);
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = qw(-v);
+            $output = local_term { $class->run(@_); } @args;
             like $output, qr/@{[$class->VERSION]}/, '-v shows version';
 
-            @ARGV = qw(--version);
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = qw(--version);
+            $output = local_term { $class->run(@_); } @args;
             like $output, qr/@{[$class->VERSION]}/, '--version shows version';
         };
 
@@ -63,11 +75,10 @@ subtest 'ucrawl-tweet' => sub {
             TODO: { local $TODO = 'later';
             plan qw(no_plan); pass;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             }
         };
 
@@ -75,11 +86,10 @@ subtest 'ucrawl-tweet' => sub {
             TODO: { local $TODO = 'later';
             plan qw(no_plan); pass;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             }
         };
 
@@ -87,11 +97,10 @@ subtest 'ucrawl-tweet' => sub {
             TODO: { local $TODO = 'later';
             plan qw(no_plan); pass;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             }
         };
 
@@ -99,11 +108,10 @@ subtest 'ucrawl-tweet' => sub {
             TODO: { local $TODO = 'later';
             plan qw(no_plan); pass;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             }
         };
 
@@ -111,11 +119,10 @@ subtest 'ucrawl-tweet' => sub {
             TODO: { local $TODO = 'later';
             plan qw(no_plan); pass;
 
-            local @ARGV;
-            my $output;
+            my (@args, $output);
 
-            @ARGV = ();
-            $output = capture_merged { $class->run(@ARGV); };
+            @args = ();
+            $output = local_term { $class->run(@_); } @args;
             }
         };
     };

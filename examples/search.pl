@@ -55,7 +55,7 @@ _HELP_
 my $db_user = '';
 my $db_pass = '';
 if ($driver eq 'mysql') {
-    my $mysql_conf = pit_get($driver, require => {
+    my $mysql_conf = pit_get($driver, require => +{
         user => 'mysql database user',
         pass => 'mysql user password',
     });
@@ -99,7 +99,7 @@ if (scalar @status_id || scalar @profile_id || scalar @datetime || scalar @text)
 
     $where{retweeted_status_id} = undef if $ignore_retweet;
 
-    my $result = $schema->search('status', \%where, { order_by => 'id DESC' });
+    my $result = $schema->search('status', \%where, +{ order_by => 'id DESC' });
     while ( my $row = $result->next ) {
         my $len = length $row->user->screen_name;
         $spacer = $len if $len > $spacer;

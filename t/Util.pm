@@ -37,7 +37,7 @@ sub setup_mysql_dbh {
                 $MYSQLD = bless $obj, 'Test::mysqld';
             }
             else {
-                $MYSQLD = Test::mysqld->new(my_cnf => {
+                $MYSQLD = Test::mysqld->new(my_cnf => +{
                     'skip-networking' => '',
                 });
                 warn $Test::mysqld::errstr unless $MYSQLD;
@@ -54,13 +54,13 @@ sub setup_mysql_dbh {
         $dsn = 'dbi:mysql:test';
     }
 
-    DBI->connect($dsn,undef,undef,{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+    DBI->connect($dsn,undef,undef,+{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 }
 
 sub setup_sqlite_dbh {
     shift;
     my $file = shift || ':memory:';
-    DBI->connect('dbi:SQLite:'.$file,undef,undef,{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+    DBI->connect('dbi:SQLite:'.$file,undef,undef,+{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 }
 
 sub open_json_file {

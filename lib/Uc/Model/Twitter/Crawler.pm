@@ -19,9 +19,12 @@ use Uc::Model::Twitter;
 $Uc::Model::Twitter::Crawler::VERSION = Uc::Model::Twitter->VERSION;
 
 sub configure_encoding {
-    STDIN->binmode(":encoding(console_in)");
-    STDOUT->binmode(":encoding(console_out)");
-    STDERR->binmode(":encoding(console_out)");
+    my $stdin  = -t STDIN  ? 'console_in'  : 'utf8';
+    my $stdout = -t STDOUT ? 'console_out' : 'utf8';
+    my $stderr = -t STDERR ? 'console_out' : 'utf8';
+    STDIN->binmode(":encoding($stdin)");
+    STDOUT->binmode(":encoding($stdout)");
+    STDERR->binmode(":encoding($stderr)");
     decode_argv();
 }
 
@@ -31,12 +34,12 @@ sub get_option_parser {
     my $script_file = basename($0);
     my $default_file = get_default_file();
     my @default_options = (
-        c => { alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
-        p => { alias => 'page',   type => 'Int', default => 1,             describe => 'number of crawling' },
-        i => { alias => 'count',  type => 'Int', default => 200,           describe => 'api option: count' },
-        m => { alias => 'max_id', type => 'Int',                           describe => 'api option: max_id' },
-        a => { alias => 'all',    type => 'Bool',                          describe => 'fetch all pages' },
-        'no-store' => { alias => 'no_store', type => 'Bool',               describe => 'not store crawled tweets' },
+        c => +{ alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
+        p => +{ alias => 'page',   type => 'Int', default => 1,             describe => 'number of crawling' },
+        i => +{ alias => 'count',  type => 'Int', default => 200,           describe => 'api option: count' },
+        m => +{ alias => 'max_id', type => 'Int',                           describe => 'api option: max_id' },
+        a => +{ alias => 'all',    type => 'Bool',                          describe => 'fetch all pages' },
+        'no-store' => +{ alias => 'no_store', type => 'Bool',               describe => 'not store crawled tweets' },
     );
 
     # manual
@@ -44,7 +47,7 @@ sub get_option_parser {
 Usage: $script_file <command> -h
 _USAGE_
     $parser->usage($manual)->options(
-        v => { alias => 'version', type => 'Bool', describe => 'show version' },
+        v => +{ alias => 'version', type => 'Bool', describe => 'show version' },
     );
 
     # command: conf
@@ -55,7 +58,7 @@ this command configures Twitter consumer key, secret key and authentication info
 these settings will be saved in '$default_file' or the file which is geven with -c option
 _USAGE_CONF_
     $parser->subcmd( conf => Smart::Options->new->usage($usage_conf)->options(
-        c => { alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
+        c => +{ alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
     ) );
 
     # command: user
@@ -92,8 +95,8 @@ crawls <status_id> status.
 command read STDIN if '-' is given as <status_id>
 _USAGE_STATUS_
     $parser->subcmd( status => Smart::Options->new->usage($usage_status)->options(
-        c => { alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
-        'no-store' => { alias => 'no_store', type => 'Bool',               describe => 'not store crawled tweets' },
+        c => +{ alias => 'config', type => 'Str', default => $default_file, describe => 'setting file path' },
+        'no-store' => +{ alias => 'no_store', type => 'Bool',               describe => 'not store crawled tweets' },
     ) );
     $parser;
 }
@@ -145,7 +148,7 @@ sub new_agent {
     Net::Twitter::Lite::WithAPIv1_1->new(
         ssl            => 1,
         consumer_key   => 1,
-        useragent_args => { timeout => 10 },
+        useragent_args => +{ timeout => 10 },
         @_,
     );
 }
@@ -159,14 +162,14 @@ sub setup_dbh {
 
 sub setup_dbh_sqlite {
     my $file = shift || ':memory:';
-    DBI->connect('dbi:SQLite:'.$file,'','',{RaiseError => 1, PrintError => 0, AutoCommit => 1, sqlite_unicode => 1});
+    DBI->connect('dbi:SQLite:'.$file,'','',+{RaiseError => 1, PrintError => 0, AutoCommit => 1, sqlite_unicode => 1});
 }
 
 sub setup_dbh_mysql {
     my $db = shift || 'test';
     my $user = shift;
     my $pass = shift;
-    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
+    my $dbh = DBI->connect('dbi:mysql:'.$db,$user,$pass,+{RaiseError => 1, PrintError => 0, AutoCommit => 1,  mysql_enable_utf8 => 1});
     $dbh->do('SET NAMES utf8mb4');
     $dbh;
 }
@@ -192,7 +195,7 @@ sub _api {
     unless ($@) {
         my $txn = $schema->txn_scope;
         for my $t (@$tweets) {
-            $schema->find_or_create_status($t, { user_id => $config->{user_id} }) unless $option->{no_store};
+            $schema->find_or_create_status($t, +{ user_id => $config->{user_id} }) unless $option->{no_store};
 
             $api_arg->{max_id} = sprintf "%s", Math::BigInt->new($t->{id})-1;
             say sprintf "%.19s: %s: %s", $t->{created_at}, $t->{user}{screen_name}, $t->{text};
@@ -225,7 +228,7 @@ use namespace::clean;
 sub new {
     my $class = shift;
     my %init_arg = @_;
-    configure_encoding() if $init_arg{configure_encoding} && -t;
+    configure_encoding() if $init_arg{configure_encoding};
 
     bless { init_arg => \%init_arg }, $class;
 }
@@ -441,7 +444,7 @@ sub status {
     while (my $status_id = shift $option->{_}) {
         my $t = eval { $nt->show_status({ id => $status_id }); };
         unless ($@) {
-            $schema->find_or_create_status($t, { user_id => $config->{user_id} }) unless $option->{no_store};
+            $schema->find_or_create_status($t, +{ user_id => $config->{user_id} }) unless $option->{no_store};
             say sprintf "%s: %.19s: %s: %s", $t->{id}, $t->{created_at}, $t->{user}{screen_name}, $t->{text};
         }
         else {

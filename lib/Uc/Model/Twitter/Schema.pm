@@ -96,12 +96,12 @@ use parent 'Teng::Row';
 
 sub user { # belongs_to
     my $self = shift;
-    $self->{_prv_umt_profile} //= $self->{teng}->single('user', { id => $self->user_id, profile_id => $self->profile_id });
+    $self->{_prv_umt_profile} //= $self->{teng}->single('user', +{ id => $self->user_id, profile_id => $self->profile_id });
 }
 
 sub remarked { # has_many
     my $self = shift;
-    $self->{teng}->search('remark', { id => $self->id, @_ });
+    $self->{teng}->search('remark', +{ id => $self->id, @_ });
 }
 
 sub favorited { # has_many
@@ -117,12 +117,12 @@ use parent 'Teng::Row';
 
 sub tweets { # has_many
     my $self = shift;
-    $self->{teng}->search('status', { user_id => $self->id });
+    $self->{teng}->search('status', +{ user_id => $self->id });
 }
 
 sub remarks { # has_many
     my $self = shift;
-    $self->{teng}->search('remark', { user_id => $self->id, @_ });
+    $self->{teng}->search('remark', +{ user_id => $self->id, @_ });
 }
 
 sub favorites { # has_many
@@ -135,7 +135,7 @@ sub retweets { # has_many
 
 sub remarked { # has_many
     my $self = shift;
-    $self->{teng}->search('remark', { status_user_id => $self->id, @_ });
+    $self->{teng}->search('remark', +{ status_user_id => $self->id, @_ });
 }
 
 sub favorited { # has_many
@@ -151,17 +151,17 @@ use parent 'Teng::Row';
 
 sub tweet { # belongs_to
     my $self = shift;
-    $self->{_prv_umt_tweet} //= $self->{teng}->single('status', { id => $self->id });
+    $self->{_prv_umt_tweet} //= $self->{teng}->single('status', +{ id => $self->id });
 }
 
 sub user { # belongs_to
     my $self = shift;
-    $self->{_prv_umt_profile} //= $self->{teng}->single('user', { id => $self->user_id });
+    $self->{_prv_umt_profile} //= $self->{teng}->single('user', +{ id => $self->user_id });
 }
 
 sub status_user { # belongs_to
     my $self = shift;
-    $self->{_prv_umt_status_profile} //= $self->{teng}->single('user', { id => $self->status_user_id });
+    $self->{_prv_umt_status_profile} //= $self->{teng}->single('user', +{ id => $self->status_user_id });
 }
 
 

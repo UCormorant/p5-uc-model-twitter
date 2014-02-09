@@ -88,7 +88,7 @@ sub get_profile_id {
 sub user_default_value {
     my $user  = shift;
     my $table = shift;
-    $user = defined $user && ref $user ? {%$user} : {};
+    $user = defined $user && ref $user ? {%$user} : +{};
     for my $key (@USER_VALUE_FOR_DIGEST) {
         my $default = "";
         if (is_integer($table->get_sql_type($key))) { $default = 0; }

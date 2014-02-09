@@ -21,7 +21,7 @@ sub find_or_create_status {
     my $table = $self->schema->get_table('status');
     my $user  = $tweet->{user};
 
-    $attr = {} unless $attr;
+    $attr = +{} unless $attr;
     $attr->{user_id}          = '' if not exists $attr->{user_id};
     $attr->{ignore_unmarking} = '' if not exists $attr->{ignore_unmarking};
 
@@ -80,7 +80,7 @@ sub find_or_create_profile {
     my ($self, $user, $attr) = @_;
     my $table = $self->schema->get_table('user');
 
-    $attr = {} unless $attr;
+    $attr = +{} unless $attr;
 
     my %columns;
     for my $col (@{$table->columns}) {
@@ -102,7 +102,7 @@ sub update_or_create_remark {
     my ($self, $update, $attr) = @_;
     my $table = $self->schema->get_table('remark');
 
-    $attr = {} unless $attr;
+    $attr = +{} unless $attr;
     $attr->{retweeted_status_id}      = '' if not exists $attr->{retweeted_status_id};
     $attr->{retweeted_status_user_id} = '' if not exists $attr->{retweeted_status_user_id};
 
@@ -125,7 +125,7 @@ sub update_or_create_remark {
         $retweeted_status_id = $attr->{retweeted_status_id};
     }
     else {
-        my $tweet = $self->single('status', { id => $columns{id} });
+        my $tweet = $self->single('status', +{ id => $columns{id} });
         if ($tweet and defined $tweet->retweeted_status_id and $tweet->retweeted_status_id ne '') {
             $retweeted_status_id = $tweet->retweeted_status_id;
         }
@@ -135,7 +135,7 @@ sub update_or_create_remark {
         $retweeted_status_user_id = $attr->{retweeted_status_user_id};
     }
     elsif (defined $retweeted_status_id) {
-        my $tweet = $self->single('status', { id => $retweeted_status_id });
+        my $tweet = $self->single('status', +{ id => $retweeted_status_id });
         $retweeted_status_user_id = $tweet->user_id if $tweet;
     }
 
