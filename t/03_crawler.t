@@ -277,10 +277,26 @@ subtest 'ucrawl-tweet' => sub {
             };
 
             subtest 'fail test' => sub {
-                plan tests => 15;
+                plan tests => 19;
 
                 my $mock_guard;
                 my $count;
+
+                # 403
+                $mock_guard = mock_guard 'Net::Twitter::Lite::WithAPIv1_1' => +{
+                    $ua_method => sub {
+                        die Net::Twitter::Lite::Error->new(
+                            http_response => HTTP::Response->new(403 => 'Forbidden'),
+                            twitter_error => t::Util->open_json_file('twitter_error.179.json'),
+                        );
+                    },
+                };
+                @args = ($command, qw(1 -c), $config_file);
+                ($stdout, $stderr) = local_term { $class->run(@_); } @args;
+                like   $stdout, qr/\bstatus_id=1/, 'show status id';
+                like   $stdout, qr/\b403\b/, 'show http status code';
+                unlike $stdout, qr/\bcode=179\b/, 'does not show twitter error code';
+                is $stderr, '', 'no warning is occered';
 
                 # 404
                 $mock_guard = mock_guard 'Net::Twitter::Lite::WithAPIv1_1' => +{
@@ -350,13 +366,15 @@ subtest 'ucrawl-tweet' => sub {
             };
 
             subtest 'status_id from ARGV' => sub {
-                plan tests => 2;
+                plan tests => 7;
 
                 my $mock_guard;
 
                 my $count = 0;
                 $mock_guard = mock_guard 'Net::Twitter::Lite::WithAPIv1_1' => +{
                     $ua_method => sub {
+                        my $self = shift;
+                        my $query = shift;
                         if (++$count == 2) {
                             die Net::Twitter::Lite::Error->new(
                                 http_response => HTTP::Response->new(
@@ -366,14 +384,29 @@ subtest 'ucrawl-tweet' => sub {
                                 twitter_error => t::Util->open_json_file('twitter_error.88.json'),
                             );
                         }
+                        elsif ($count == 5 ) {
+                            die Net::Twitter::Lite::Error->new(
+                                http_response => HTTP::Response->new(
+                                    403 => 'Forbidden',
+                                ),
+                                twitter_error => t::Util->open_json_file('twitter_error.179.json'),
+                            );
+                        }
 
-                        return t::Util->open_json_file("status.exclude_retweet.json");
+                        my $tweet = t::Util->open_json_file("status.exclude_retweet.json");
+                        $tweet->{id} = $query->{id};
+                        return $tweet;
                     },
                 };
 
-                @args = ($command, qw(1 2 3 -c), $config_file);
+                @args = ($command, qw(1 2 3 4 5 -c), $config_file);
                 ($stdout, $stderr) = local_term { $class->run(@_); } @args;
-                is $count, 4, 'call api once';
+                is $count, 6, 'call api once';
+                like   $stdout, qr/^1:/m, 'get id 1';
+                like   $stdout, qr/^2:/m, 'get id 2';
+                like   $stdout, qr/^3:/m, 'get id 3';
+                unlike $stdout, qr/^4:/m, 'do not get id 4';
+                like   $stdout, qr/^5:/m, 'get id 5';
                 is $stderr, '', 'no warning is occered';
             };
         };

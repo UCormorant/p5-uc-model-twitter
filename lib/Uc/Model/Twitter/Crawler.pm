@@ -456,7 +456,7 @@ sub status {
         }
         else {
             say "status_id=$status_id: $@";
-            if (ref $@ and $@->isa('Net::Twitter::Lite::Error') and $@->code != 404) {
+            if (ref $@ and $@->isa('Net::Twitter::Lite::Error') and ($@->code == 429 or $@->code !~ /^4\d\d$/)) {
                 unshift $option->{_}, $status_id;
 
                 my $limit = 0;
