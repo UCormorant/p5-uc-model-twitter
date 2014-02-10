@@ -14,6 +14,10 @@ use JSON::PP qw();
 use File::Temp qw(tempdir);
 use Storable qw(dclone);
 
+use Scope::Guard qw(scope_guard);
+
+$ENV{TEST} = 1;
+
 my $MYSQLD;
 my $JSON = JSON::PP->new->utf8->allow_bignum;
 
@@ -91,9 +95,12 @@ sub store {
     close $fh;
 }
 
-sub tempfolder {
+sub fake_home {
     shift;
-    tempdir(CLEANUP => 1);
+    state $home_orig = $ENV{HOME};
+
+    $ENV{HOME} = tempdir(CLEANUP => 1);
+    scope_guard sub { $ENV{HOME} = $home_orig; };
 }
 
 1;

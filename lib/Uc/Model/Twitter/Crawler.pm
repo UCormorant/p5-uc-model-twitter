@@ -138,9 +138,9 @@ sub input_data {
     return $input;
 }
 sub input_secret {
-    ReadMode('noecho');
+    ReadMode('noecho')  unless $ENV{TEST};
     my $input = input_data(shift);
-    ReadMode('restore'); print "\n";
+    ReadMode('restore') unless $ENV{TEST}; print "\n";
     return $input;
 }
 
@@ -288,9 +288,7 @@ sub conf {
     }
 
     CONSUMER_KEY:    $config->{consumer_key} = input_secret("input Twitter consumer key: ");
-                     goto CONSUMER_KEY if $config->{consumer_key} eq '';
     CONSUMER_SECRET: $config->{consumer_secret} = input_secret("input Twitter consumer secret: ");
-                     goto CONSUMER_SECRET if $config->{consumer_secret} eq '';
 
     $nt->{consumer_key}    = $config->{consumer_key};
     $nt->{consumer_secret} = $config->{consumer_secret};
@@ -330,10 +328,8 @@ sub conf {
                      $config->{driver_name} = input_data("select database driver [SQLite/MySQL]: ");
                      if    ($config->{driver_name} =~ /^[sS]/) { $config->{driver_name} = 'SQLite'; }
                      elsif ($config->{driver_name} =~ /^[mM]/) { $config->{driver_name} = 'mysql'; }
-                     else { goto INPUT_DB_DRIVER; }
 
     INPUT_DB_NAME: $config->{db_name} = input_data("input database name: ");
-                   goto INPUT_DB_NAME if $config->{db_name} eq '';
 
     if ($config->{driver_name} eq 'mysql') {
         INPUT_DB_USER: $config->{db_user} = input_data("input database user: ");

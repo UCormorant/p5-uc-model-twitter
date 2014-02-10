@@ -4,8 +4,10 @@ use Test::More::Hooks;
 use Test::Exception;
 use Test::Mock::Guard qw(mock_guard);
 use Capture::Tiny qw(capture capture_merged);
+use DBI;
 use File::Basename qw(basename dirname);
 use File::Spec::Functions qw(catfile);
+use Scope::Guard qw(scope_guard);
 use TOML qw(from_toml to_toml);
 
 use Uc::Model::Twitter::Crawler;
@@ -31,16 +33,18 @@ plan tests => 1;
 
 subtest 'ucrawl-tweet' => sub {
     my $class;
-    my $tempdir = t::Util->tempfolder;
+    my $config;
+    my $config_file;
     my $script_file = basename($0);
-    my $config_file = catfile(dirname(__FILE__), 'crawler_config.toml');
-    my $config = from_toml(t::Util->slurp('crawler_config.toml'));
+    my $home_guard = t::Util->fake_home;
     my $verify_guard = mock_guard 'Net::Twitter::Lite::WithAPIv1_1' => +{
         verify_credentials => 1,
     };
-    $config_file = catfile($tempdir, 'config.toml');
-    $config->{db_name} = catfile($tempdir, 'db.sqlite');
-    t::Util->store($config_file, to_toml($config), 1);
+
+    $config = from_toml(t::Util->slurp(catfile(dirname(__FILE__), 'crawler_config.toml'), 'abs'));
+    $config->{db_name} = catfile($ENV{HOME}, 'db.sqlite');
+    $config_file = catfile($ENV{HOME}, 'config.toml');
+    t::Util->store($config_file, to_toml($config), 'abs');
 
     before { $class = Uc::Model::Twitter::Crawler->new(); };
     after  { undef $class; };
@@ -210,7 +214,7 @@ subtest 'ucrawl-tweet' => sub {
             dbh => t::Util->setup_sqlite_dbh(@{$config}{qw(db_name db_user db_pass)}),
         );
         before { $schema->create_table; };
-        after  { $schema->drop_table; };
+        after  { $schema->drop_table;   };
 
         plan tests => 7;
         isa_ok $class, 'Uc::Model::Twitter::Crawler', '$class';
@@ -243,15 +247,89 @@ subtest 'ucrawl-tweet' => sub {
         };
 
         subtest 'command conf' => sub {
-            plan tests => 2;
+            plan tests => 3;
 
-            my (@args, $output, @result, $stdout, $stderr, $mock_guard);
+            my $command = 'conf';
+            my (@args, $output, @result, $stdout, $stderr);
 
-            # show help
-            @args = qw(conf -h);
-            ($output, @result) = local_term_merged { eval { $class->run(@_); }; } @args;
-            like $output, qr/^Usage: $script_file $args[0]/, 'show help';
-            like $output, qr/--config/,   'help text says about -c option';
+            my ($nt_mock_guard, $dbi_mock_guard, $dbh_moch_guard);
+            $nt_mock_guard = mock_guard 'Net::Twitter::Lite::WithAPIv1_1' => +{
+                get_authorization_url => 'https://example.com/auth',
+                request_access_token => sub { return @{$config}{qw/token token_secret user_id screen_name/}; },
+            };
+            $dbi_mock_guard = mock_guard 'DBI' => +{
+                connect => $schema->dbh,
+            };
+            $dbh_moch_guard = mock_guard $schema->dbh => +{
+                do => sub {
+                    my $self = shift;
+                    my $sql  = shift;
+                    if ($sql !~ /^SET NAMES /) { $self->do($sql); }
+                },
+            };
+
+            my $default_file = catfile($ENV{HOME}, '.'.($script_file =~ s/(?:\.\w+)*$//r));
+            my $command_orig = \&Uc::Model::Twitter::Crawler::conf;
+            my %anser = ();
+            my $class_guard = mock_guard $class => +{
+                conf => sub {
+                    local $_;
+                    my $stdin = catfile($ENV{HOME}, 'stdin');
+                    close STDIN;
+                    open STDIN, '>', $stdin;
+                    print STDIN "$anser{$_}\n" for sort keys %anser;
+                    print STDIN "\n" for 1..30;
+                    close STDIN;
+                    open STDIN, '<', $stdin;
+                    $command_orig->(@_);
+                },
+            };
+
+            subtest 'show help' => sub {
+                plan tests => 2;
+
+                @args = ($command, qw(-h));
+                ($output, @result) = local_term_merged { eval { $class->run(@_); }; } @args;
+                like $output, qr/^Usage: $script_file $args[0]/, 'show help';
+                like $output, qr/--config/,   'help text says about -c option';
+            };
+
+            subtest 'make config (no option)' => sub {
+                plan tests => 2;
+
+                my $after = scope_guard sub { unlink $default_file if -f $default_file };
+
+                %anser = (
+                    '01_consumer_key'       => 'consumer',
+                    '02_consumer_secret'    => 'consumer secret',
+                    '03_pin'                => '12345',
+                    '04_driver_name'        => 'm',
+                    '05_db_name'            => 'test',
+                    '06_db_user'            => 'test',
+                    '07_db_pass'            => 'test',
+                    '08_create_table'       => '',
+                    '09_force_craete'       => '',
+                );
+                @args = ($command, qw());
+                ($stdout, $stderr) = local_term { $class->run(@_); } @args;
+                ok -f $default_file, 'exists defualt config file';
+                is $stderr, '', 'no warning is occered';
+            };
+
+            subtest 'no change' => sub {
+                plan tests => 2;
+
+                %anser = (
+                    '01_consumer_setting' => '',
+                    '02_database_setting' => '',
+                    '03_create_table'     => '',
+                );
+                @args = ($command, qw(-c), $config_file);
+                ($stdout, $stderr) = local_term { $class->run(@_); } @args;
+                ok((not -f $default_file), 'does not exist defualt config file')
+                    or unlink $default_file;
+                is $stderr, '', 'no warning is occered';
+            };
         };
 
         subtest 'command user'    => $crawl_test->('user',    'user_timeline');
@@ -378,7 +456,7 @@ subtest 'ucrawl-tweet' => sub {
                             die Net::Twitter::Lite::Error->new(
                                 http_response => HTTP::Response->new(
                                     429 => 'Too Many Requests',
-                                    ['x-api-limit-reset' => time+3],
+                                    ['x-api-limit-reset' => time+10],
                                 ),
                                 twitter_error => t::Util->open_json_file('twitter_error.88.json'),
                             );
