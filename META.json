@@ -51,7 +51,7 @@
             "Net::Twitter::Lite" : "0.12006",
             "Smart::Options" : "0.053",
             "TOML" : "0.92",
-            "Teng" : "0",
+            "Teng" : "0.19",
             "Teng::Plugin::DBIC::ResultSet" : "0",
             "Term::ReadKey" : "2.31",
             "experimental" : "0.006",
@@ -64,8 +64,12 @@
             "Test::mysqld" : "0.17"
          },
          "requires" : {
+            "Capture::Tiny" : "0.24",
             "DBD::SQLite" : "0",
+            "Scope::Guard" : "0.20",
+            "TOML" : "0.92",
             "Test::Exception" : "0.32",
+            "Test::Mock::Guard" : "0.10",
             "Test::More" : "0.98",
             "Test::More::Hooks" : "0.12"
          }
@@ -83,5 +87,5 @@
          "web" : "https://github.com/UCormorant/p5-uc-model-twitter"
       }
    },
-   "version" : "v1.2.1"
+   "version" : "v1.2.2"
 }

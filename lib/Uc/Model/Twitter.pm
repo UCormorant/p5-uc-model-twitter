@@ -1,4 +1,4 @@
-package Uc::Model::Twitter v1.2.1;
+package Uc::Model::Twitter v1.2.2;
 
 use 5.014;
 use warnings;
@@ -203,6 +203,9 @@ See L</lib/Uc/Model/Twitter/Schema.pm>.
 Find or create a row into C<status> table.
 Returns the inserted row object.
 
+If C<$tweet> includeds C<< $tweet->{retweeted_status} >>,
+it will also be stored into the database automatically.
+
 C<$attr> can include:
 
 =over
@@ -214,11 +217,6 @@ An numeric id of the user who receive C<$tweet>.
 =item * C<ignore_unmarking>
 
 If this is given, C<update_or_create_remark> ignores false values when update C<remark> table rows.
-
-=item * C<retweeted_status>
-
-If this is given, C<update_or_create_remark> uses C<< $attr->{retweeted_status}{id} >> as retweet status id.
-Or, it will do C<< $umt-E<gt>find_or_create_status($tweet-E<gt>{retweeted_status}) >> and get the status id from returned value.
 
 =back
 
@@ -244,6 +242,7 @@ You should give this method the hash reference as C<$remark> that include follow
 
     id => tweet id,
     user_id => event user id,
+    status_user_id => tweet's user id,
     favorited => true or false,
     retweeted => true or false,
 
@@ -267,6 +266,8 @@ Drop tables (status, user, remark and profile_images).
 =item L<perl> >= 5.14
 
 =item L<experimental>
+
+=item L<namespace::clean>
 
 =item L<Teng>
 

@@ -1,7 +1,7 @@
 requires 'perl', '5.014';
 requires 'experimental', '0.006';
 requires 'namespace::clean', '0.24';
-requires 'Teng';
+requires 'Teng', '0.19';
 requires 'Teng::Plugin::DBIC::ResultSet'; # not on CPAN
 requires 'DateTime::Format::HTTP';
 requires 'DateTime::Format::MySQL';
@@ -19,7 +19,12 @@ on test => sub {
     requires 'Test::More', '0.98';
     requires 'Test::More::Hooks', '0.12';
     requires 'Test::Exception', '0.32';
+    requires 'Test::Mock::Guard', '0.10';
+
+    requires 'Capture::Tiny', '0.24';
     requires 'DBD::SQLite';
+    requires 'Scope::Guard', '0.20';
+    requires 'TOML', '0.92';
 
     recommends 'Test::mysqld', '0.17';
 };

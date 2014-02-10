@@ -30,6 +30,9 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
     Find or create a row into `status` table.
     Returns the inserted row object.
 
+    If `$tweet` includeds `$tweet->{retweeted_status}`,
+    it will also be stored into the database automatically.
+
     `$attr` can include:
 
     - `user_id`
@@ -39,11 +42,6 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
     - `ignore_unmarking`
 
         If this is given, `update_or_create_remark` ignores false values when update `remark` table rows.
-
-    - `retweeted_status`
-
-        If this is given, `update_or_create_remark` uses `$attr->{retweeted_status}{id}` as retweet status id.
-        Or, it will do `$umt->find_or_create_status($tweet->{retweeted_status})` and get the status id from returned value.
 
     If `$tweet` has `user`, it calls `find_or_create_profile` too.
     A profile row will be created whenever user profile update will come.
@@ -67,6 +65,7 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
 
         id => tweet id,
         user_id => event user id,
+        status_user_id => tweet's user id,
         favorited => true or false,
         retweeted => true or false,
 
@@ -85,6 +84,7 @@ See ["lib/Uc/Model/Twitter/Schema.pm"](#lib-uc-model-twitter-schema-pm).
 
 - [perl](https://metacpan.org/pod/perl) >= 5.14
 - [experimental](https://metacpan.org/pod/experimental)
+- [namespace::clean](https://metacpan.org/pod/namespace::clean)
 - [Teng](https://metacpan.org/pod/Teng)
 - Teng::Plugin::DBIC::ResultSet
 

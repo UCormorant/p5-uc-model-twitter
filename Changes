@@ -2,6 +2,19 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.2.2 2014-02-10T07:41:34Z
+
+    - fixed a bug in ucrawl-tweet:
+        - command status falls into infinite loop
+          if api returns 403 Forbidden
+
+    - updated dependencies: newly requires:
+        - Test::Mock::Guard >= 0.10
+        - Capture::Tiny >= 0.24
+        - Scope::Guard >= 0.20
+
+    - updated POD
+
 v1.2.1 2014-02-09T16:56:18Z
 
     - updated ucrawler-tweet:

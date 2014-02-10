@@ -3,7 +3,6 @@ use Test::More;
 use Test::More::Hooks;
 use Test::Exception;
 use Test::Mock::Guard qw(mock_guard);
-use Scope::Guard qw(scope_guard);
 use Capture::Tiny qw(capture capture_merged);
 use File::Basename qw(basename dirname);
 use File::Spec::Functions qw(catfile);
