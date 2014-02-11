@@ -10,7 +10,9 @@ use lib catdir(dirname(__FILE__), '..', 'lib');
 
 use autodie;
 use DBI;
+use Encode;
 use JSON::PP qw();
+use File::Copy qw(copy);
 use File::Temp qw(tempdir);
 use Storable qw(dclone);
 
@@ -101,6 +103,12 @@ sub fake_home {
 
     $ENV{HOME} = tempdir(CLEANUP => 1);
     scope_guard sub { $ENV{HOME} = $home_orig; };
+}
+
+sub filecopy {
+    shift;
+    my ($file, $move, $abs) = @_;
+    copy($file, $move);
 }
 
 1;

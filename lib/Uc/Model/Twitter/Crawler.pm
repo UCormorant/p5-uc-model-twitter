@@ -209,11 +209,13 @@ sub _api {
         if (ref $@ and $@->isa('Net::Twitter::Lite::Error')) {
             my $limit = 0;
             my $not_found = 0;
-            map {
-                say sprintf "code=$_->{code}: $_->{message}";
-                $limit     = 1 if $_->{code} == 88;
-                $not_found = 1 if $_->{code} == 34;
-            } @{$@->twitter_error->{errors}};
+            if (defined $@->twitter_error) {
+                map {
+                    say sprintf "code=$_->{code}: $_->{message}";
+                    $limit     = 1 if $_->{code} == 88;
+                    $not_found = 1 if $_->{code} == 34;
+                } @{$@->twitter_error->{errors}};
+            }
 
             if ($limit) {
                 my $header = $@->http_response->headers;
@@ -275,11 +277,18 @@ sub conf {
     if (-e $filename) {
         $config = load_toml($filename);
         if (exists $config->{consumer_key}) {
-            my $anser = input_data("do you want to update consumer key? [y/N]: ");
-            if ($anser eq '' || $anser =~ /^[nN]/) {
+            my $answer = input_data("do you want to update consumer key? [y/N]: ");
+            if ($answer eq '' || $answer =~ /^[nN]/) {
                 $nt->{consumer_key}    = $config->{consumer_key};
                 $nt->{consumer_secret} = $config->{consumer_secret};
-                goto CONFIGURE_DATABASE;
+
+                my $answer = input_data("do you want to change authenticating user? [y/N]: ");
+                if ($answer eq '' || $answer =~ /^[nN]/) {
+                    goto CONFIGURE_DATABASE;
+                }
+                else {
+                    goto INPUT_PIN;
+                }
             }
         }
     }
@@ -287,77 +296,84 @@ sub conf {
         say "'$filename' is not found. new file will be saved.";
     }
 
-    CONSUMER_KEY:    $config->{consumer_key} = input_secret("input Twitter consumer key: ");
-    CONSUMER_SECRET: $config->{consumer_secret} = input_secret("input Twitter consumer secret: ");
+    CONFIGURE_KEY: {
+        CONSUMER_KEY:    $config->{consumer_key} = input_secret("input Twitter consumer key: ");
+        CONSUMER_SECRET: $config->{consumer_secret} = input_secret("input Twitter consumer secret: ");
 
-    $nt->{consumer_key}    = $config->{consumer_key};
-    $nt->{consumer_secret} = $config->{consumer_secret};
+        $nt->{consumer_key}    = $config->{consumer_key};
+        $nt->{consumer_secret} = $config->{consumer_secret};
 
-    print "verifying input keys ... ";
-    $url = eval { $nt->get_authorization_url; };
-    die "invalid key set is given. retry configure.\n" if $@;
-    say "ok.";
-
-    INPUT_PIN: print "\n"; $retry--;
-    $url = eval { $nt->get_authorization_url; } unless $url;
-    say 'please open the following url and allow this app, then enter PIN code.';
-    say $url; undef $url;
-    $pin = input_data('PIN: ');
-
-    @{$config}{qw/token token_secret user_id screen_name/} = eval { $nt->request_access_token(verifier => $pin); };
-    if ($@) {
-        if ($retry) {
-            say "invalid pin code is given. retry.";
-            goto INPUT_PIN;
-        }
-        else {
-            die "invalid pin code is given. retry configure.\n";
-        }
+        print "verifying input keys ... ";
+        $url = eval { $nt->get_authorization_url; };
+        die "invalid key set is given. retry configure.\n" if $@;
+        say "ok.";
     }
-    say "authentication is succeeded.";
-    $retry = 3;
+
+    INPUT_PIN: {
+        print "\n";
+        $url = eval { $nt->get_authorization_url; } unless $url;
+        say 'please open the following url and allow this app, then enter PIN code.';
+        say $url; undef $url;
+        $pin = input_data('PIN: ');
+
+        @{$config}{qw/token token_secret user_id screen_name/} = eval { $nt->request_access_token(verifier => $pin); };
+        if ($@) {
+            if (--$retry > 0) {
+                say "invalid pin code is given. retry.";
+                goto INPUT_PIN;
+            }
+            else {
+                die "invalid pin code is given. retry configure.\n";
+            }
+        }
+        say "authentication is succeeded.";
+        $retry = 3;
+    }
 
     CONFIGURE_DATABASE:
-    if (exists $config->{driver_name}) {
-        my $anser = input_data("do you want to update database settings? [y/N]: ");
-        if ($anser eq '' || $anser =~ /^[nN]/) {
-            goto CREATE_TABLE;
+    {
+        if (exists $config->{driver_name}) {
+            my $answer = input_data("do you want to update database settings? [y/N]: ");
+            if ($answer eq '' || $answer =~ /^[nN]/) {
+                goto CREATE_TABLE;
+            }
         }
-    }
-    INPUT_DB_DRIVER: print "\n"; $retry--;
-                     $config->{driver_name} = input_data("select database driver [SQLite/MySQL]: ");
-                     if    ($config->{driver_name} =~ /^[sS]/) { $config->{driver_name} = 'SQLite'; }
-                     elsif ($config->{driver_name} =~ /^[mM]/) { $config->{driver_name} = 'mysql'; }
+        INPUT_DB_DRIVER: print "\n";
+                         $config->{driver_name} = input_data("select database driver [SQLite/MySQL]: ");
+                         if    ($config->{driver_name} =~ /^[sS]/) { $config->{driver_name} = 'SQLite'; }
+                         elsif ($config->{driver_name} =~ /^[mM]/) { $config->{driver_name} = 'mysql'; }
 
-    INPUT_DB_NAME: $config->{db_name} = input_data("input database name: ");
+        INPUT_DB_NAME: $config->{db_name} = input_data("input database name: ");
 
-    if ($config->{driver_name} eq 'mysql') {
-        INPUT_DB_USER: $config->{db_user} = input_data("input database user: ");
-        INPUT_DB_PASS: $config->{db_pass} = input_secret("input database pasword: ");
-    }
-
-    print "verifying database settings ... ";
-    eval { setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}); };
-    if ($@) {
-        if ($retry) {
-            say "invalid db settings. retry.";
-            goto INPUT_DB_DRIVER;
+        if ($config->{driver_name} eq 'mysql') {
+            INPUT_DB_USER: $config->{db_user} = input_data("input database user: ");
+            INPUT_DB_PASS: $config->{db_pass} = input_secret("input database pasword: ");
         }
-        else {
-            die "invalid db settings. retry configure.\n";
+
+        print "verifying database settings ... ";
+        eval { setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}); };
+        if ($@) {
+            if (--$retry > 0) {
+                say "invalid db settings. retry.";
+                goto INPUT_DB_DRIVER;
+            }
+            else {
+                die "invalid db settings. retry configure.\n";
+            }
         }
+        say "ok.";
+        $retry = 3;
     }
-    say "ok.";
 
     CREATE_TABLE:
     {
-        my $anser = input_data("do you want to create table in database '$config->{db_name}'? [Y/n]: ");
-        if ($anser =~ /^[nN]/) {
+        my $answer = input_data("do you want to create table in database '$config->{db_name}'? [Y/n]: ");
+        if ($answer =~ /^[nN]/) {
             goto FINISH_CONFIGURE;
         }
         else {
-            my $anser = input_data("do you want to do 'force create'? [y/N]: ");
-            my $if_not_exists = $anser =~ /[nN]/ ? 1 : 0;
+            my $answer = input_data("do you want to do 'force create'? [y/N]: ");
+            my $if_not_exists = $answer =~ /^[yY]/ ? 0 : 1;
             my $schema = Uc::Model::Twitter->new( dbh => setup_dbh(@{$config}{qw(driver_name db_name db_user db_pass)}) );
             $schema->create_table(if_not_exists => $if_not_exists);
         }
@@ -444,7 +460,8 @@ sub status {
         chomp(@{$option->{_}} = <STDIN>);
     }
 
-    while (my $status_id = shift $option->{_}) {
+    while (scalar @{$option->{_}}) {
+        my $status_id = shift $option->{_};
         my $t = eval { $nt->show_status({ id => $status_id }); };
         unless ($@) {
             $schema->find_or_create_status($t, +{ user_id => $config->{user_id} }) unless $option->{no_store};
@@ -456,10 +473,12 @@ sub status {
                 unshift $option->{_}, $status_id;
 
                 my $limit = 0;
-                map {
-                    say sprintf "code=$_->{code}: $_->{message}";
-                    $limit     = 1 if $_->{code} == 88;
-                } @{$@->twitter_error->{errors}};
+                if (defined $@->twitter_error) {
+                    map {
+                        say sprintf "code=$_->{code}: $_->{message}";
+                        $limit     = 1 if $_->{code} == 88;
+                    } @{$@->twitter_error->{errors}};
+                }
 
                 if ($limit) {
                     my $header = $@->http_response->headers;
