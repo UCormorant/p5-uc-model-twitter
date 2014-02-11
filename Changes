@@ -2,6 +2,20 @@ Revision history for Uc-Model-Twitter
 
 {{$NEXT}}
 
+v1.2.3 2014-02-11T07:35:13Z
+
+    - added "change user" phase into ucrawl-tweet command "conf"
+
+    - fixed bugs in ucrawl-tweet:
+        - crawler is died when $@->twitter_error is not defined
+        - tables are dropped and created when
+          you give empty answer to the question 'force create?'
+          default should have been 'no'
+        - command "status" is finished unexpectedly
+          when empty line comes from STDIN
+
+    - added tests for ucrawl-tweet: command "conf"
+
 v1.2.2 2014-02-10T07:41:34Z
 
     - fixed a bug in ucrawl-tweet:
